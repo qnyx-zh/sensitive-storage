@@ -1,9 +1,14 @@
 package main
 
 import (
+	"context"
+	"log"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
+	"go.mongodb.org/mongo-driver/mongo/readpref"
 )
 
 var db = make(map[string]string)
@@ -68,8 +73,17 @@ func setupRouter() *gin.Engine {
 }
 
 func main() {
-    
+
 	r := setupRouter()
 	// Listen and Server in 0.0.0.0:8080
+	r.Use(gin.Recovery())
+	rg := r.Group("v1")
+	rg.GET("/rg", func(c *gin.Context) {
+		c.String(http.StatusOK, "path=v1/rg")
+	})
+	rg.GET("/r2", func(c *gin.Context) {
+		c.String(http.StatusOK, "path=v1/rg2")
+	})
 	r.Run(":8099")
 }
+
