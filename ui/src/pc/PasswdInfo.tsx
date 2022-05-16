@@ -1,6 +1,7 @@
-import React from 'React'
-import {Button, Table} from "antd";
+import React from 'react'
+import {Button, Row, Table} from "antd";
 import BlankElement from "./component/BlankElement";
+import BlankRow from "./component/BlankRow";
 
 class State {
     tableData: Array<{ key: string, label: string }> = []
@@ -63,6 +64,13 @@ export class PasswdInfo extends React.Component<Props, State> {
 
     render() {
         return (<div>
+            <Row>
+                <Button type={"primary"} >添加</Button>
+                <BlankElement/>
+                <Button type={"primary"} >刷新</Button>
+                <BlankElement/>
+            </Row>
+            <BlankRow/>
             <Table
                 className="components-table-demo-nested"
                 columns={this.ui_table.columns}
