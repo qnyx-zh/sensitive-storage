@@ -1,2 +1,2 @@
 # sensitive-storage
-敏感信息存储
+存储账户密码等敏感信息
