@@ -2,6 +2,8 @@ package main
 
 import (
 	"net/http"
+	"sensitive-storage/api"
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -76,7 +78,8 @@ func main() {
 		c.String(http.StatusOK, "path=v1/rg")
 	})
 	rg.GET("/r2", func(c *gin.Context) {
-		c.String(http.StatusOK, "path=v1/rg2")
+		s := api.NewUserApi().UserRegister(c)
+		c.String(http.StatusOK,s)
 	})
 	r.Run(":8099")
 }
