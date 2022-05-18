@@ -1,4 +1,4 @@
-package client
+package clients
 
 import (
 	"context"
@@ -10,9 +10,10 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/readpref"
 )
 
-func NewClient() *mongo.Client {
+func newClient() *mongo.Client {
 	opts := options.Client().ApplyURI(constant.MONGO)
 	client, err := mongo.Connect(context.Background(), opts)
+	defer client.Disconnect(context.Background())
 	if err != nil {
 		log.Fatalf("连接mongo数据库异常,原因=%V", err)
 	}
@@ -22,6 +23,7 @@ func NewClient() *mongo.Client {
 	return client
 }
 
-func ConectDB(dbName string) *mongo.Database {
-	return NewClient().Database(dbName)
+func ConectDB(dbName string, collectionName string) *mongo.Collection {
+	return newClient().Database(dbName).Collection(collectionName)
+
 }
