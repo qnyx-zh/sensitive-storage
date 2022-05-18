@@ -5,16 +5,16 @@ import Resp from "../model/HttpModel";
 import RouterURL from "../env/RouterURL";
 import RouterUtil from "../utils/RouterUtil";
 
-axios.interceptors.response.use(
-    (response: any) => {
-        const pathName = RouterUtil.getPath();
-        if (!response.data.login && pathName != RouterURL.LOGIN) {
-            RouterUtil.push(RouterURL.LOGIN);
-        } else {
-            return response;
-        }
-    }
-);
+// axios.interceptors.response.use(
+//     (response: any) => {
+//         const pathName = RouterUtil.getPath();
+//         if (!response.data.login && pathName != RouterURL.LOGIN) {
+//             RouterUtil.push(RouterURL.LOGIN);
+//         } else {
+//             return response;
+//         }
+//     }
+// );
 
 export default class HttpClient {
 
@@ -22,10 +22,10 @@ export default class HttpClient {
         if (ObjectUtil.isNotNull(value)) {
             let _data = value.data;
             if (_data.status === 'error') {
-                console.log('errLog[' + url + ']:' + _data.data.errormsg);
+                console.log('errLog[' + url + ']:' + _data.errMsg);
                 notification.open({
                     message: '错误信息',
-                    description: _data.data.errormsg,
+                    description: _data.errMsg,
                     duration: 1.5
                 });
             } else {

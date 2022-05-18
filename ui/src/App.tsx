@@ -1,18 +1,19 @@
 import React from 'react';
 import logo from './logo.svg';
 import './App.css';
-import {HashRouter as Router, Route, Switch} from "react-router-dom";
+import {BrowserRouter, Route, Routes} from "react-router-dom";
 import {PasswdInfo} from "./pc/PasswdInfo";
 
 function App() {
-  return (
-      <Router>
-        <Switch>
-        {/*  <Route component={} path={"/login"}/>*/}
-          <Route component={PasswdInfo} path={"/"}/>
-        </Switch>
-      </Router>
-  );
+    return (
+        <BrowserRouter>
+            <Routes>
+                {/*  <Route component={} path={"/login"}/>*/}
+                <Route path={"/passwdInfo"} element={<PasswdInfo/>}></Route>
+            </Routes>
+        </BrowserRouter>
+
+    );
 }
 
 export default App;
