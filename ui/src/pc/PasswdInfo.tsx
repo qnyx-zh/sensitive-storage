@@ -2,6 +2,9 @@ import React from 'react'
 import {Button, Row, Table} from "antd";
 import BlankElement from "./component/BlankElement";
 import BlankRow from "./component/BlankRow";
+import HttpClient from "../common/component/HttpClient";
+import InputEx from "./component/InputEx";
+import Search from "antd/es/input/Search";
 
 class State {
     tableData: Array<{ key: string, label: string }> = []
@@ -48,6 +51,14 @@ export class PasswdInfo extends React.Component<Props, State> {
         ],
         doDelete: (id: string) => {
             // todo
+        },
+        loadData: () => {
+            const url = "http://127.0.0.1:4523/mock/991824/passwdInfos"
+            HttpClient.get(url, resp => {
+                this.setState({
+                    tableData: resp.data.passwds
+                })
+            })
         }
     }
 
@@ -62,12 +73,22 @@ export class PasswdInfo extends React.Component<Props, State> {
         this.state = new State()
     }
 
+
+
+    componentDidMount() {
+        this.ui_table.loadData()
+    }
+
     render() {
         return (<div>
             <Row>
                 <Button type={"primary"} >添加</Button>
                 <BlankElement/>
                 <Button type={"primary"} >刷新</Button>
+                <BlankElement/>
+                <Search placeholder="input search text" onSearch={()=>{
+
+                }} style={{ width: 200 }} />
                 <BlankElement/>
             </Row>
             <BlankRow/>
