@@ -2,7 +2,7 @@ package main
 
 import (
 	"net/http"
-	"sensitive-storage/api"
+	"sensitive-storage/router"
 
 	"github.com/gin-gonic/gin"
 )
@@ -69,18 +69,8 @@ func setupRouter() *gin.Engine {
 }
 
 func main() {
-
 	r := setupRouter()
-	// Listen and Server in 0.0.0.0:8080
 	r.Use(gin.Recovery())
-	rg := r.Group("v1")
-	rg.GET("/rg", func(c *gin.Context) {
-		c.String(http.StatusOK, "path=v1/rg")
-	})
-	rg.GET("/r2", func(c *gin.Context) {
-		s := api.NewUserApi().UserRegister(c)
-		c.String(http.StatusOK,s)
-	})
+	router.SetupRouter(r)
 	r.Run(":8099")
 }
-
