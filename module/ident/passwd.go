@@ -6,4 +6,5 @@ type Passwd struct {
 	Username    string //账户
 	Password    string //密码
 	Description string //备注
+	Topic       string //标题
 }

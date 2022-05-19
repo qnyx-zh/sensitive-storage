@@ -10,4 +10,8 @@ func SetupRouter(c *gin.Engine) {
 	rg := c.Group("/")
 	rg.POST("passwdInfo", api.SavePasswdInfo)
 	rg.GET("passwdInfo/:id", api.QueryPasswdById)
+	rg.GET("passwdInfos", api.QueryPasswdList)
+	rg.DELETE("passwdInfo/:id", api.DeletePasswdById)
+	rg.GET("search", api.SearchPasswdList)
+
 }
