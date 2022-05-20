@@ -1,5 +1,5 @@
 import React from 'react'
-import {Button, Form, Input, Modal, Row, Table} from "antd";
+import {Button, Form, Input, Modal, notification, Popconfirm, Row, Table, Tooltip} from "antd";
 import BlankElement from "./component/BlankElement";
 import BlankRow from "./component/BlankRow";
 import HttpClient from "../common/component/HttpClient";
@@ -8,17 +8,28 @@ import {CopyOutlined, LockOutlined, UnlockOutlined} from '@ant-design/icons';
 import css from './style/passwd-info.module.css';
 import ObjectUtil from "../common/utils/ObjectUtil";
 import Resp from "../common/model/HttpModel";
+import HttpURL from "../common/env/HttpURL";
+
+class TableRow {
+    id = ""
+    username = ""
+    password = ""
+    topic = ""
+    description = ""
+    locked = true
+}
+
+class FormData {
+    username = ""
+    password = ""
+    topic = ""
+    description = ""
+}
 
 class State {
-    tableData: Array<{ key: string, label: string }> = []
+    tableData: Array<TableRow> = []
     dialogVisible: boolean = false
-    formData = {
-        username: "",
-        password: "",
-        topic: "",
-        description: ""
-    }
-    unlockedPasswd: { [key: string]: boolean } = {}
+    formData: FormData = new FormData()
 }
 
 class Props {
@@ -35,9 +46,6 @@ export class PasswdInfo extends React.Component<Props, State> {
                 render: (col: any, row: any, index: any) => {
                     return <div>
                         <label>{row.topic}</label>
-                        <span className={css.passwdCopy} title={"复制密码"}>
-                             <CopyOutlined/>
-                        </span>
                     </div>
                 }
             },
@@ -50,21 +58,50 @@ export class PasswdInfo extends React.Component<Props, State> {
                 title: '密码',
                 dataIndex: 'password',
                 key: 'password',
-                render: (col: any, row: any, index: any) => {
+                render: (col: any, row: TableRow, index: number) => {
                     return <div>
-                        <label>{this.state.unlockedPasswd[row.id] ? row['password'] : '*******'}</label>
+                        <span>
+                          <label>{row.locked ? row['password'] : '*******'}</label>
+                        </span>
                         <span className={css.passwdLock} onClick={() => {
-                            this.setState({
-                                    unlockedPasswd: {
-                                        ...this.state.unlockedPasswd,
-                                        ["" + row.id]: !this.state.unlockedPasswd[row.id]
+                            const _tableData = [...this.state.tableData]
+                            for (const i in this.state.tableData) {
+                                if (parseInt(i) === index) {
+                                    const locked: boolean = _tableData[i].locked
+                                    _tableData[i] = {
+                                        ..._tableData[i],
+                                        locked: !locked
                                     }
+                                    this.setState({
+                                        tableData: _tableData
+                                    })
+                                    break
                                 }
-                            )
+                            }
                         }
                         }>
-                            {this.state.unlockedPasswd[row.id] ? <UnlockOutlined/> : <LockOutlined/>}
+                            {row.locked ? <UnlockOutlined/> : <LockOutlined/>}
                         </span>
+                        <Tooltip placement="top" title={"复制密码"}>
+                            <span className={css.passwdCopy} onClick={(v) => {
+                                const inp = document.createElement("input")
+                                const val: string = row['password']
+                                inp.setAttribute('value', val)
+                                inp.setAttribute('style', 'display:\'none\'')
+                                document.body.append(inp)
+                                inp.select()
+                                document.execCommand("copy")
+                                document.body.removeChild(inp)
+                                notification.open({
+                                    message: '提示',
+                                    description: '密码已复制到剪切板',
+                                    duration: 1.5
+                                });
+                            }
+                            }>
+                             <CopyOutlined/>
+                        </span>
+                        </Tooltip>
                     </div>
                 }
             },
@@ -83,21 +120,35 @@ export class PasswdInfo extends React.Component<Props, State> {
                             this.ui_dialogs.openEditForm(row.id)
                         }}>编辑</Button>
                         <BlankElement/>
-                        <Button onClick={() => {
+                        <Popconfirm placement="topLeft" title={"确定删除吗？"} onConfirm={() => {
                             this.ui_table.doDelete(row.id)
-                        }}>删除</Button>
+                        }
+                        } okText="是" cancelText="否">
+                            <Button onClick={() => {
+                            }}>删除</Button>
+                        </Popconfirm>
                     </div>;
                 }
             }
         ],
         doDelete: (id: string) => {
-            // todo
+            const url = HttpURL.DEL_PASSWD + "/" + id
+            HttpClient.delete(url, resp => {
+                this.ui_table.loadData()
+            })
         },
         loadData: () => {
             const url = "http://127.0.0.1:4523/mock/991824/passwdInfos"
             HttpClient.get(url, resp => {
+                let _tableData = resp.data.passwds
+                _tableData = _tableData.map((v: TableRow) => {
+                    return {
+                        ...v,
+                        locked: false
+                    }
+                })
                 this.setState({
-                    tableData: resp.data.passwds
+                    tableData: _tableData
                 })
             })
         },
@@ -147,10 +198,13 @@ export class PasswdInfo extends React.Component<Props, State> {
                 );
             }
             if (id) {
-                const url = ""
+                const url = "http://127.0.0.1:4523/mock/991824/passwdInfo/6ba7b810-9dad-11d1-80b4-00c04fd430c8"
                 HttpClient.get(url, resp => {
-                    this.ui_table.loadData()
-                    this.ui_dialogs.doClose()
+                    this.setState({
+                            formData: (resp.data as FormData)
+                        }
+                    )
+                    showFn()
                 })
             } else {
                 showFn();

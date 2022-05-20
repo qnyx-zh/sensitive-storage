@@ -61,4 +61,12 @@ export default class HttpClient {
             HttpClient.errorRespFunc(err, finalFunc)
         });
     }
+
+    public static delete = (url: string, successFunc?: (resp: Resp) => void, finalFunc?: (err?: any) => void): void => {
+        axios.delete(url).then(value => {
+            HttpClient.successRespFunc(url, value, successFunc, finalFunc)
+        }).catch(err => {
+            HttpClient.errorRespFunc(err, finalFunc)
+        });
+    }
 }
