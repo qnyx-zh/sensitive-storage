@@ -13,7 +13,6 @@ import (
 func newClient() *mongo.Client {
 	opts := options.Client().ApplyURI(constant.MONGO)
 	client, err := mongo.Connect(context.Background(), opts)
-	defer client.Disconnect(context.Background())
 	if err != nil {
 		log.Fatalf("连接mongo数据库异常,原因=%V", err)
 	}
