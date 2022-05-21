@@ -70,6 +70,7 @@ func setupRouter() *gin.Engine {
 
 func main() {
 	r := setupRouter()
+	r.Use(router.Cors())
 	r.Use(gin.Recovery())
 	router.SetupRouter(r)
 	r.Run(":8099")

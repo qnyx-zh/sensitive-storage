@@ -50,7 +50,7 @@ func QueryPasswdById(c *gin.Context) {
 		return
 	}
 	userId := getUserId(c)
-	filter := bson.M{"id": id, "userid": userId}
+	filter := bson.M{"id": id, "user_id": userId}
 	var passwd ident.Passwd
 	err = mongo.FindOne(context.Background(), filter).Decode(&passwd)
 	if err != nil {
