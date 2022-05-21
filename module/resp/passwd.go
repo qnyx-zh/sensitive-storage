@@ -8,10 +8,3 @@ type PasswdInfosResp struct {
 	Description string `bson:"description"` //备注
 	Topic       string `bson:"topic"`       //标题
 }
-
-type PasswdInfoPageResp struct {
-	result   []PasswdInfosResp
-	pageNum  int
-	pageSize int
-	total    int
-}

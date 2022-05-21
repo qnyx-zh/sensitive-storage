@@ -6,7 +6,7 @@ type Resp struct {
 	//异常信息
 	ErrMsg string `json:"errMsg"`
 	//状态码
-	Code string `json:"code"`
+	Code int `json:"code"`
 	//返回数据
 	Data interface{} `json:"data"`
 }

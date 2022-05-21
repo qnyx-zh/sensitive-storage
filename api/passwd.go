@@ -70,7 +70,7 @@ func QueryPasswdList(c *gin.Context) {
 		c.JSON(http.StatusOK, callback.CallBackFail("参数错误"))
 		return
 	}
-	filter := bson.M{"userid": userId}
+	filter := bson.M{"user_id": userId}
 	findoptions := &options.FindOptions{}
 	if req.PageSize > 0 {
 		findoptions.SetLimit(int64(req.PageSize))
@@ -106,7 +106,7 @@ func DeletePasswdById(c *gin.Context) {
 		c.JSON(http.StatusOK, callback.CallBackSuccess("删除成功"))
 		return
 	}
-	filter := bson.M{"id": id, "userid": userId}
+	filter := bson.M{"id": id, "user_id": userId}
 	_, err = mongo.DeleteOne(context.Background(), filter)
 	if err != nil {
 		log.Printf("mongo删除异常,原因=%v", err)
@@ -128,14 +128,16 @@ func SearchPasswdList(c *gin.Context) {
 		"topic": primitive.Regex{
 			Pattern: query.Q,
 		},
-		"userid": userId,
+		"user_id": userId,
 	}
 	findoptions := &options.FindOptions{}
-	findoptions.SetLimit(int64(query.PageSize))
-	index := query.PageNum
-	limit := query.PageSize
-	skip := (index - 1) * limit
-	findoptions.SetSkip(int64(skip))
+	if query.PageSize > 0 {
+		findoptions.SetLimit(int64(query.PageSize))
+		index := query.PageNum
+		limit := query.PageSize
+		skip := (index - 1) * limit
+		findoptions.SetSkip(int64(skip))
+	}
 	cur, err := mongo.Find(context.Background(), filter, findoptions)
 	if err != nil {
 		log.Printf("查询异常,原因=%v", err)
