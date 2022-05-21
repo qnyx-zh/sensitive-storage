@@ -1,0 +1,19 @@
+.passwdBody {
+    padding: 1rem 1rem;
+    background-color: #f7f7f7;
+}
+
+.passwdLine {
+    padding: 1rem;
+    background-color: #FFFFFF;
+    border-radius: 0.7rem;
+    margin: 1rem 0;
+}
+
+.passwdLine .topic {
+
+}
+
+.passwdLine .date {
+    color: darkgray;
+}

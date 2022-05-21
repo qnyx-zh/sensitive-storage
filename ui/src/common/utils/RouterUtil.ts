@@ -1,10 +1,14 @@
 export default class RouterUtil {
 
     public static push = (url: string, params?: { [key: string]: any }) => {
+        let ownerHref = window.location.href
+        if (ownerHref.endsWith("/")) {
+            ownerHref = ownerHref.substring(0, ownerHref.length - 1)
+        }
         if (params) {
 
         }
-        window.open(window.location.pathname + "#" + url, '_self');
+        window.open(ownerHref + url, '_self');
     }
 
     public static replace = (url: string) => {

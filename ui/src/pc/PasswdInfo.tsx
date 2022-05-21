@@ -1,5 +1,5 @@
 import React from 'react'
-import {Button, Form, Input, Modal, notification, Popconfirm, Row, Table, Tooltip} from "antd";
+import {Button, Col, Form, Input, Modal, notification, Popconfirm, Row, Table, Tooltip} from "antd";
 import BlankElement from "./component/BlankElement";
 import BlankRow from "./component/BlankRow";
 import HttpClient from "../common/component/HttpClient";
@@ -9,6 +9,8 @@ import css from './style/passwd-info.module.css';
 import ObjectUtil from "../common/utils/ObjectUtil";
 import Resp from "../common/model/HttpModel";
 import HttpURL from "../common/env/HttpURL";
+import StringUtil from "../common/utils/StringUtil";
+import {Notification} from "../common/component/Notification";
 
 class TableRow {
     id = ""
@@ -58,31 +60,36 @@ export class PasswdInfo extends React.Component<Props, State> {
                 title: '密码',
                 dataIndex: 'password',
                 key: 'password',
+                width: 250,
                 render: (col: any, row: TableRow, index: number) => {
                     return <div>
-                        <span>
-                          <label>{row.locked ? row['password'] : '*******'}</label>
+                        <Row>
+                            <Col span={16}>
+                                <span>
+                          <label>{row.locked ? row['password'] : '**************'}</label>
                         </span>
-                        <span className={css.passwdLock} onClick={() => {
-                            const _tableData = [...this.state.tableData]
-                            for (const i in this.state.tableData) {
-                                if (parseInt(i) === index) {
-                                    const locked: boolean = _tableData[i].locked
-                                    _tableData[i] = {
-                                        ..._tableData[i],
-                                        locked: !locked
+                            </Col>
+                            <Col span={8}>
+                                <span className={css.passwdLock} onClick={() => {
+                                    const _tableData = [...this.state.tableData]
+                                    for (const i in this.state.tableData) {
+                                        if (parseInt(i) === index) {
+                                            const locked: boolean = _tableData[i].locked
+                                            _tableData[i] = {
+                                                ..._tableData[i],
+                                                locked: !locked
+                                            }
+                                            this.setState({
+                                                tableData: _tableData
+                                            })
+                                            break
+                                        }
                                     }
-                                    this.setState({
-                                        tableData: _tableData
-                                    })
-                                    break
                                 }
-                            }
-                        }
-                        }>
+                                }>
                             {row.locked ? <UnlockOutlined/> : <LockOutlined/>}
                         </span>
-                        <Tooltip placement="top" title={"复制密码"}>
+                                <Tooltip placement="top" title={"复制密码"}>
                             <span className={css.passwdCopy} onClick={(v) => {
                                 const inp = document.createElement("input")
                                 const val: string = row['password']
@@ -101,7 +108,9 @@ export class PasswdInfo extends React.Component<Props, State> {
                             }>
                              <CopyOutlined/>
                         </span>
-                        </Tooltip>
+                                </Tooltip>
+                            </Col>
+                        </Row>
                     </div>
                 }
             },
@@ -138,7 +147,7 @@ export class PasswdInfo extends React.Component<Props, State> {
             })
         },
         loadData: () => {
-            const url = "http://127.0.0.1:4523/mock/991824/passwdInfos"
+            const url = HttpURL.GET_PASSWD_LIST
             HttpClient.get(url, resp => {
                 let _tableData = resp.data.passwds
                 _tableData = _tableData.map((v: TableRow) => {
@@ -153,7 +162,7 @@ export class PasswdInfo extends React.Component<Props, State> {
             })
         },
         doSearch: (text: string) => {
-            const url = "http://127.0.0.1:4523/mock/991824/search?q=" + text
+            const url = HttpURL.GET_PASSWD_SEARCH + "?q=" + text
             HttpClient.get(url, resp => {
                 this.setState({
                     tableData: resp.data.passwds
@@ -172,8 +181,23 @@ export class PasswdInfo extends React.Component<Props, State> {
                 dialogVisible: false
             })
         },
+        // 对必填字段进行验证，通过返回true，未通过返回false
+        doValidate: () => {
+            const validateFields = ["username", "password", "topic"]
+            let key: keyof FormData
+            for (key in this.state.formData) {
+                if (validateFields.indexOf(key) > -1 && StringUtil.isBlank(this.state.formData[key])) {
+                    return false
+                }
+            }
+            return true
+        },
         doOk: () => {
-            const url = ""
+            if (!this.ui_dialogs.doValidate()) {
+                Notification.error("请填写完整信息")
+                return
+            }
+            const url = HttpURL.POST_PASSWD
             HttpClient.post(url, this.state.formData, (resp: Resp) => {
                 this.ui_dialogs.doClose();
                 this.ui_table.loadData();
@@ -198,7 +222,7 @@ export class PasswdInfo extends React.Component<Props, State> {
                 );
             }
             if (id) {
-                const url = "http://127.0.0.1:4523/mock/991824/passwdInfo/6ba7b810-9dad-11d1-80b4-00c04fd430c8"
+                const url = HttpURL.GET_PASSWD + "/" + id
                 HttpClient.get(url, resp => {
                     this.setState({
                             formData: (resp.data as FormData)
@@ -217,17 +241,17 @@ export class PasswdInfo extends React.Component<Props, State> {
                        onOk={this.ui_dialogs.doOk}
                        visible={this.state.dialogVisible}>
                     <Form {...this.ui_dialogs.layout}>
-                        <Form.Item label={"标题"}>
+                        <Form.Item label={"标题"} name={"topic"} rules={[{required: true, message: '请输入标题'}]}>
                             <Input value={this.state.formData.topic} onChange={(val) => {
                                 this.setState({formData: ObjectUtil.getNewProperty(this.state, "formData.topic", val.target.value)})
                             }}/>
                         </Form.Item>
-                        <Form.Item label={"用户名"}>
+                        <Form.Item label={"用户名"} name={"username"} rules={[{required: true, message: '请输入用户名'}]}>
                             <Input value={this.state.formData.username} onChange={(val) => {
                                 this.setState({formData: ObjectUtil.getNewProperty(this.state, "formData.username", val.target.value)})
                             }}/>
                         </Form.Item>
-                        <Form.Item label={"密码"}>
+                        <Form.Item label={"密码"} name={"password"} rules={[{required: true, message: '请输入密码'}]}>
                             <Input value={this.state.formData.password} onChange={(val) => {
                                 this.setState({formData: ObjectUtil.getNewProperty(this.state, "formData.password", val.target.value)})
                             }}/>
@@ -254,7 +278,7 @@ export class PasswdInfo extends React.Component<Props, State> {
     }
 
     render() {
-        return (<div>
+        return (<div className={css.passwdBody}>
             <Row>
                 <Button type={"primary"} onClick={() => {
                     this.ui_dialogs.openEditForm()

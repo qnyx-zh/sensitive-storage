@@ -4,6 +4,8 @@ import {notification} from "antd";
 import Resp from "../model/HttpModel";
 import RouterURL from "../env/RouterURL";
 import RouterUtil from "../utils/RouterUtil";
+import {Notification} from "./Notification";
+import {request} from "http";
 
 // axios.interceptors.response.use(
 //     (response: any) => {
@@ -16,6 +18,14 @@ import RouterUtil from "../utils/RouterUtil";
 //     }
 // );
 
+axios.interceptors.request.use(
+    (request: any) => {
+        request.url = "http://82.157.167.11:8099" +  + request.url
+
+        return request
+    }
+)
+
 export default class HttpClient {
 
     private static successRespFunc = (url: string, value: any, successFunc?: (r: Resp) => void, finalFunc?: Function) => {
@@ -23,11 +33,7 @@ export default class HttpClient {
             let _data = value.data;
             if (_data.status === 'error') {
                 console.log('errLog[' + url + ']:' + _data.errMsg);
-                notification.open({
-                    message: '错误信息',
-                    description: _data.errMsg,
-                    duration: 1.5
-                });
+                Notification.error(_data.errMsg)
             } else {
                 if (successFunc) {
                     successFunc(_data as Resp);
