@@ -1,3 +1,7 @@
 export default class HttpURL {
-    public static DEL_PASSWD = "http://127.0.0.1:4523/mock/991824/passwdInfo";
+    public static DEL_PASSWD = "/passwdInfo";
+    public static GET_PASSWD_LIST = "/passwdInfos";
+    public static GET_PASSWD_SEARCH = "/search";
+    public static GET_PASSWD = "/passwdInfo";
+    public static POST_PASSWD = "/passwdInfo";
 }
