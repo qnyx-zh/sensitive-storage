@@ -7,12 +7,12 @@ import (
 	"encoding/base64"
 	"fmt"
 	"log"
-	"reflect"
+	"sensitive-storage/util/crypt"
 	"testing"
 )
 
 func Test_copy(t *testing.T) {
-	d := []byte("zzzz")
+	d := []byte("asdfghjkloiuytre")
 	key := []byte("hgfedcba87654321")
 	fmt.Println("加密前:", string(d))
 	x1, err := encryptAES(d, key)
@@ -25,20 +25,12 @@ func Test_copy(t *testing.T) {
 		log.Fatalln(err)
 	}
 	fmt.Println("解密后:", string(x2))
-}
-
-func printXXXX(save1 interface{}) {
-
-	sT := reflect.TypeOf(save1)
-
-	v := reflect.New(sT.Elem())
-	fmt.Printf("v: %v\n", v)
-	sV := reflect.ValueOf(&save1).Elem()
-	for i := 0; i < sT.NumField(); i++ {
-		s := sT.Field(i).Name
-		sV.FieldByName(s).Set(reflect.ValueOf("aaaa"))
-	}
-	fmt.Println(save1)
+	fmt.Printf("crypt.Md5crypt(\"zzz\"): %v\n", crypt.Md5crypt("12345"))
+	fmt.Printf("crypt.Md5crypt(\"zzz\"): %v\n", crypt.Md5crypt("zzz"))
+	s, _ := crypt.AesEncrypt("adasfas")
+	fmt.Printf("s: %v\n", s)
+	s2, _ := crypt.AesDeCrypt(s)
+	fmt.Printf("s2: %v\n", s2)
 }
 
 // 加密
@@ -77,4 +69,3 @@ func unpadding(src []byte) []byte {
 	unPadNum := int(src[n-1])
 	return src[:n-unPadNum]
 }
-

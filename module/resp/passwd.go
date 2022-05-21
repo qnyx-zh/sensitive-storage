@@ -2,7 +2,7 @@ package resp
 
 type PasswdInfosResp struct {
 	//用户名
-	Username string
+	Username string 
 	//密码
 	Password string
 	//主题

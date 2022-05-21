@@ -1,7 +1,7 @@
 package ident
 
 type User struct {
-	UserName string
-	Passwd   string
-	Id       int
+	UserName string `bson:"user_name"`
+	Passwd   string `bson:"password"`
+	Id       int    `bson:"id"`
 }

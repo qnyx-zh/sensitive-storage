@@ -10,6 +10,7 @@ import (
 	"sensitive-storage/module/ident"
 	"sensitive-storage/module/req"
 	"sensitive-storage/module/resp"
+	"sensitive-storage/util/callback"
 	"sensitive-storage/util/crypt"
 	"strconv"
 
@@ -26,53 +27,29 @@ var userMongo = clients.ConectDB(constant.DB_SENSITIVE_STORAGE, constant.USER)
 func SavePasswdInfo(c *gin.Context) {
 	u := checkToken(c)
 	if u == (ident.User{}) {
-		resp := &resp.Resp{
-			Status: constant.RespFailStr,
-			Code:   constant.RespFail,
-			ErrMsg: "登录异常",
-		}
-		c.JSON(http.StatusOK, resp)
+		c.JSON(http.StatusOK, callback.CallBackFail("登陆异常"))
 		return
 	}
 	var saveInfoReq req.SavePasswdReq
 	err := c.ShouldBindJSON(&saveInfoReq)
 	if err != nil {
-		resp := &resp.Resp{
-			Status: constant.RespFailStr,
-			ErrMsg: "参数错误",
-			Code:   constant.RespFail,
-		}
-		c.JSON(http.StatusOK, resp)
+		c.JSON(http.StatusOK, callback.CallBackFail("参数错误"))
 		return
 	}
 	passwd := ident.Passwd{UserId: u.Id, Username: saveInfoReq.UserName, Password: saveInfoReq.PassWord, Description: saveInfoReq.Description, Id: genSonyflake(), Topic: saveInfoReq.Topic}
 	_, err = mongo.InsertOne(context.Background(), passwd)
 	if err != nil {
 		log.Fatalf("发生错误,原因=%v", err.Error())
-		resp := &resp.Resp{
-			Status: constant.RespFailStr,
-			ErrMsg: "网络异常",
-			Code:   constant.RespFail,
-		}
-		c.JSON(http.StatusOK, resp)
+		c.JSON(http.StatusOK, callback.CallBackFail("网络异常"))
 		return
 	}
-	resp := &resp.Resp{
-		Status: constant.RespSuccessStr,
-		Code:   constant.RespSuccess,
-	}
-	c.JSON(http.StatusOK, resp)
+	c.JSON(http.StatusOK, callback.CallBackSuccess(nil))
 }
 
 func QueryPasswdById(c *gin.Context) {
 	u := checkToken(c)
 	if u == (ident.User{}) {
-		resp := resp.Resp{
-			Status: constant.RespFailStr,
-			Code:   constant.RespFail,
-			ErrMsg: "登录异常",
-		}
-		c.JSON(http.StatusOK, resp)
+		c.JSON(http.StatusOK, callback.CallBackFail("登录异常"))
 		return
 	}
 	var queryPasswdReq req.QueryPasswdReq
@@ -80,61 +57,38 @@ func QueryPasswdById(c *gin.Context) {
 	fmt.Println(s)
 	err := c.ShouldBind(&queryPasswdReq)
 	if err != nil {
-		log.Fatalf("发生错误,原因=%v", err.Error())
-		resp := &resp.Resp{
-			Status: constant.RespFailStr,
-			ErrMsg: "参数错误",
-			Code:   constant.RespFail,
-		}
-		c.JSON(http.StatusOK, resp)
+		log.Printf("发生错误,原因=%v", err.Error())
+		c.JSON(http.StatusOK, callback.CallBackFail("参数错误"))
 		return
 	}
 	id, err := strconv.Atoi(s)
 	if err != nil {
 		log.Fatalf("id转换错误,原因=%v", err.Error())
+		c.JSON(http.StatusOK, callback.CallBackFail("网络异常"))
+		return
 	}
 	filter := bson.M{"id": uint64(id), "userid": u.Id}
 	var passwd ident.Passwd
 	err = mongo.FindOne(context.Background(), filter).Decode(&passwd)
 	if err != nil {
-		log.Fatalf("发生错误,原因=%v", err.Error())
-		resp := &resp.Resp{
-			Status: constant.RespFailStr,
-			ErrMsg: "查询错误",
-			Code:   constant.RespFail,
-		}
-		c.JSON(http.StatusOK, resp)
+		log.Printf("发生错误,原因=%v", err.Error())
+		c.JSON(http.StatusOK, callback.CallBackFail("数据不存在"))
 		return
 	}
-	resp := &resp.Resp{
-		Status: constant.RespSuccessStr,
-		Code:   constant.RespSuccess,
-		Data:   passwd,
-	}
-	c.JSON(http.StatusOK, resp)
+	c.JSON(http.StatusOK, callback.CallBackSuccess(passwd))
 }
 
 func QueryPasswdList(c *gin.Context) {
 	u := checkToken(c)
 	if u == (ident.User{}) {
-		resp := resp.Resp{
-			Status: constant.RespFailStr,
-			Code:   constant.RespFail,
-			ErrMsg: "登录异常",
-		}
-		c.JSON(http.StatusOK, resp)
+		c.JSON(http.StatusOK, callback.CallBackFail("登录异常"))
 		return
 	}
 	var req req.QueryPasswdReq
 	err := c.ShouldBindQuery(&req)
 	if err != nil {
 		log.Printf("参数绑定错误,原因=%v", err)
-		resp := &resp.Resp{
-			Status: constant.RespFailStr,
-			ErrMsg: "参数错误",
-			Code:   constant.RespFail,
-		}
-		c.JSON(http.StatusOK, resp)
+		c.JSON(http.StatusOK, callback.CallBackFail("参数错误"))
 		return
 	}
 	filter := bson.M{"userid": u.Id}
@@ -149,12 +103,7 @@ func QueryPasswdList(c *gin.Context) {
 	cur, err := mongo.Find(context.Background(), filter)
 	if err != nil {
 		log.Printf("查询异常,原因=%v", err)
-		resp := &resp.Resp{
-			Status: constant.RespFailStr,
-			ErrMsg: "数据不存在",
-			Code:   constant.RespFail,
-		}
-		c.JSON(http.StatusOK, resp)
+		c.JSON(http.StatusOK, callback.CallBackFail("数据不存在"))
 	}
 	var result resp.PasswdInfosResp
 	var results []resp.PasswdInfosResp
@@ -164,26 +113,15 @@ func QueryPasswdList(c *gin.Context) {
 			log.Printf("查询绑定异常,原因=%v", err)
 		}
 		results = append(results, result)
-
 	}
-	resp := &resp.Resp{
-		Status: constant.RespSuccessStr,
-		Code:   constant.RespSuccess,
-		Data:   results,
-	}
-	c.JSON(http.StatusOK, resp)
+	c.JSON(http.StatusOK, callback.CallBackSuccess(results))
 
 }
 
 func DeletePasswdById(c *gin.Context) {
 	u := checkToken(c)
 	if u == (ident.User{}) {
-		resp := resp.Resp{
-			Status: constant.RespFailStr,
-			Code:   constant.RespFail,
-			ErrMsg: "登录异常",
-		}
-		c.JSON(http.StatusOK, resp)
+		c.JSON(http.StatusOK, callback.CallBackFail("登录异常"))
 	}
 	s := c.Param("id")
 	id, err := strconv.Atoi(s)
@@ -193,36 +131,25 @@ func DeletePasswdById(c *gin.Context) {
 	filter := bson.M{"id": id, "userid": u.Id}
 	_, err = mongo.DeleteOne(context.Background(), filter)
 	if err != nil {
-		log.Fatalf("mongo删除异常,原因=%v", err)
+		log.Printf("mongo删除异常,原因=%v", err)
+		c.JSON(http.StatusOK, callback.CallBackFail("删除失败"))
 	}
-	resp := &resp.Resp{
-		Status: constant.RespSuccessStr,
-		Code:   constant.RespSuccess,
-	}
-	c.JSON(http.StatusOK, resp)
+	c.JSON(http.StatusOK, callback.CallBackSuccess("删除成功"))
 }
 
 func SearchPasswdList(c *gin.Context) {
+	s := c.Request.Header.Get("authId")
+	fmt.Printf("s: %v\n", s)
 	u := checkToken(c)
 	if u == (ident.User{}) {
-		resp := resp.Resp{
-			Status: constant.RespFailStr,
-			Code:   constant.RespFail,
-			ErrMsg: "登录异常",
-		}
-		c.JSON(http.StatusOK, resp)
+		c.JSON(http.StatusOK, callback.CallBackFail("登录异常"))
 		return
 	}
 	var query req.QueryPasswdReq
 	err := c.ShouldBindQuery(&query)
 	if err != nil {
 		log.Fatalf("发生错误,原因=%v", err.Error())
-		resp := &resp.Resp{
-			Status: constant.RespFailStr,
-			ErrMsg: "参数错误",
-			Code:   constant.RespFail,
-		}
-		c.JSON(http.StatusOK, resp)
+		c.JSON(http.StatusOK, callback.CallBackFail("参数错误"))
 		return
 	}
 	filter := bson.M{
@@ -240,12 +167,8 @@ func SearchPasswdList(c *gin.Context) {
 	cur, err := mongo.Find(context.Background(), filter, findoptions)
 	if err != nil {
 		log.Printf("查询异常,原因=%v", err)
-		resp := &resp.Resp{
-			Status: constant.RespFailStr,
-			ErrMsg: "查询错误",
-			Code:   constant.RespFail,
-		}
-		c.JSON(http.StatusOK, resp)
+		c.JSON(http.StatusOK, callback.CallBackFail("数据不存在"))
+		return
 	}
 	var result ident.Passwd
 	var results []ident.Passwd
@@ -253,15 +176,10 @@ func SearchPasswdList(c *gin.Context) {
 		err = cur.Decode(&result)
 		results = append(results, result)
 		if err != nil {
-			log.Fatalf("查询绑定异常,原因=%v", err)
+			log.Printf("查询绑定异常,原因=%v", err)
 		}
 	}
-	resp := &resp.Resp{
-		Status: constant.RespSuccessStr,
-		Code:   constant.RespSuccess,
-		Data:   results,
-	}
-	c.JSON(http.StatusOK, resp)
+	c.JSON(http.StatusOK, callback.CallBackSuccess(results))
 }
 
 //雪花算法生成id
@@ -269,7 +187,7 @@ func genSonyflake() uint64 {
 	flake := sonyflake.NewSonyflake(sonyflake.Settings{})
 	id, err := flake.NextID()
 	if err != nil {
-		log.Fatalf("flake.NextID() failed with %s\n", err)
+		log.Printf("flake.NextID() failed with %s\n", err)
 	}
 	return id
 }
@@ -286,35 +204,21 @@ func Register(c *gin.Context) {
 	var param req.RegisterReq
 	err := c.ShouldBindJSON(&param)
 	if err != nil {
-		log.Fatalf("发生错误,原因=%v", err.Error())
-		resp := &resp.Resp{
-			Status: constant.RespFailStr,
-			ErrMsg: "参数错误",
-			Code:   constant.RespFail,
-		}
-		c.JSON(http.StatusOK, resp)
+		log.Printf("发生错误,原因=%v", err.Error())
+		c.JSON(http.StatusOK, callback.CallBackFail("参数错误"))
 		return
 	}
 	filter := bson.M{"userName": param.UserName}
 	var user ident.User
 	userMongo.FindOne(context.Background(), filter).Decode(&user)
 	if user != (ident.User{}) {
-		resp := &resp.Resp{
-			Status: constant.RespFailStr,
-			ErrMsg: "用户已注册",
-			Code:   constant.RespFail,
-		}
-		c.JSON(http.StatusOK, resp)
+		c.JSON(http.StatusOK, callback.CallBackFail("用户已注册"))
 	}
 	user.UserName = param.UserName
 	user.Passwd = crypt.Md5crypt(param.PassWord)
 	user.Id = int(genSonyflake())
 	userMongo.InsertOne(context.Background(), user)
-	resp := &resp.Resp{
-		Status: constant.RespSuccessStr,
-		Code:   constant.RespSuccess,
-	}
-	c.JSON(http.StatusOK, resp)
+	c.JSON(http.StatusOK, callback.CallBackSuccess("注册成功"))
 }
 
 func Login(c *gin.Context) {
@@ -322,43 +226,35 @@ func Login(c *gin.Context) {
 	err := c.ShouldBindJSON(&param)
 	if err != nil {
 		log.Printf("参数绑定错误,原因=%v", err)
-		resp := &resp.Resp{
-			Status: constant.RespFailStr,
-			ErrMsg: "参数错误",
-			Code:   constant.RespFail,
-		}
-		c.JSON(http.StatusOK, resp)
+		c.JSON(http.StatusOK, callback.CallBackFail("参数错误"))
 		return
 	}
 	var user ident.User
 	s := crypt.Md5crypt(param.PassWord)
 	fmt.Printf("s: %v\n", s)
-	filter := bson.M{"username": param.UserName, "passwd": "a571e4d369893a6a564ece2027149896"}
+	filter := bson.M{"username": param.UserName, "passwd": crypt.Md5crypt(param.PassWord)}
 	err = userMongo.FindOne(context.Background(), filter).Decode(&user)
 	if err != nil {
 		log.Printf("查询异常,原因=%v", err.Error())
-		resp := &resp.Resp{
-			Status: constant.RespFailStr,
-			ErrMsg: "查询错误",
-			Code:   constant.RespFail,
-		}
-		c.JSON(http.StatusOK, resp)
+		c.JSON(http.StatusOK, callback.CallBackFail("网络错误"))
 		return
 	}
 	if user == (ident.User{}) {
-		resp := &resp.Resp{
-			Status: constant.RespFailStr,
-			ErrMsg: "用户不存在或密码错误",
-			Code:   constant.RespFail,
-		}
-		c.JSON(http.StatusOK, resp)
+		c.JSON(http.StatusOK, callback.CallBackSuccess("用户不存在或密码错误"))
 		return
 	}
 	token, _ := crypt.AesEncrypt(param.UserName)
-	resp := &resp.Resp{
-		Status: constant.RespSuccessStr,
-		Code:   constant.RespSuccess,
-		Data:   token,
+	c.JSON(http.StatusOK, callback.CallBackSuccess(token))
+}
+func CheckLogin(c *gin.Context) {
+	token := c.Request.Header.Get("Authorization")
+	username, _ := crypt.AesDeCrypt(token)
+	filter := bson.M{"username": username}
+	var user ident.User
+	userMongo.FindOne(context.Background(), filter).Decode(&user)
+	if user == (ident.User{}) {
+		c.AbortWithStatusJSON(http.StatusOK, callback.CallBackFail("登陆异常"))
 	}
-	c.JSON(http.StatusOK, resp)
+	c.Request.Header.Set("authId", strconv.Itoa(user.Id))
+	c.Next()
 }

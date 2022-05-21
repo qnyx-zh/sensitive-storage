@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	KEY = "asdfghjklqwertyu"
+	KEY = "ahsjdsdertghujik"
 )
 
 func AesEncrypt(src string) (string, error) {
@@ -19,12 +19,21 @@ func AesEncrypt(src string) (string, error) {
 	b, err := encryptAES(srcNew, []byte(KEY))
 	if err != nil {
 		log.Printf("加密错误,原因=%v", err)
+		return "", err
 	}
 	return base64.StdEncoding.EncodeToString(b), err
 }
 func AesDeCrypt(src string) (string, error) {
 	decode, err := base64.StdEncoding.DecodeString(src)
+	if err != nil {
+		log.Printf("base64解码错误,原因=%v", err)
+		return "", err
+	}
 	b, err := decryptAES(decode, []byte(KEY))
+	if err != nil {
+		log.Printf("Aes解密错误,原因=%v", err)
+		return "", err
+	}
 	return string(b), err
 }
 
