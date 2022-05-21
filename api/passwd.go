@@ -25,18 +25,14 @@ var mongo = clients.ConectDB(constant.DB_SENSITIVE_STORAGE, constant.PASSWORD_IN
 var userMongo = clients.ConectDB(constant.DB_SENSITIVE_STORAGE, constant.USER)
 
 func SavePasswdInfo(c *gin.Context) {
-	u := checkToken(c)
-	if u == (ident.User{}) {
-		c.JSON(http.StatusOK, callback.CallBackFail("登陆异常"))
-		return
-	}
 	var saveInfoReq req.SavePasswdReq
 	err := c.ShouldBindJSON(&saveInfoReq)
 	if err != nil {
 		c.JSON(http.StatusOK, callback.CallBackFail("参数错误"))
 		return
 	}
-	passwd := ident.Passwd{UserId: u.Id, Username: saveInfoReq.UserName, Password: saveInfoReq.PassWord, Description: saveInfoReq.Description, Id: genSonyflake(), Topic: saveInfoReq.Topic}
+	userId := getUserId(c)
+	passwd := ident.Passwd{UserId: userId, Username: saveInfoReq.UserName, Password: saveInfoReq.PassWord, Description: saveInfoReq.Description, Id: genSonyflake(), Topic: saveInfoReq.Topic}
 	_, err = mongo.InsertOne(context.Background(), passwd)
 	if err != nil {
 		log.Fatalf("发生错误,原因=%v", err.Error())
@@ -47,27 +43,14 @@ func SavePasswdInfo(c *gin.Context) {
 }
 
 func QueryPasswdById(c *gin.Context) {
-	u := checkToken(c)
-	if u == (ident.User{}) {
-		c.JSON(http.StatusOK, callback.CallBackFail("登录异常"))
-		return
-	}
-	var queryPasswdReq req.QueryPasswdReq
-	s := c.Param("id")
-	fmt.Println(s)
-	err := c.ShouldBind(&queryPasswdReq)
+	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
-		log.Printf("发生错误,原因=%v", err.Error())
-		c.JSON(http.StatusOK, callback.CallBackFail("参数错误"))
-		return
-	}
-	id, err := strconv.Atoi(s)
-	if err != nil {
-		log.Fatalf("id转换错误,原因=%v", err.Error())
+		log.Printf("id转换错误,原因=%v", err.Error())
 		c.JSON(http.StatusOK, callback.CallBackFail("网络异常"))
 		return
 	}
-	filter := bson.M{"id": uint64(id), "userid": u.Id}
+	userId := getUserId(c)
+	filter := bson.M{"id": id, "userid": userId}
 	var passwd ident.Passwd
 	err = mongo.FindOne(context.Background(), filter).Decode(&passwd)
 	if err != nil {
@@ -79,11 +62,7 @@ func QueryPasswdById(c *gin.Context) {
 }
 
 func QueryPasswdList(c *gin.Context) {
-	u := checkToken(c)
-	if u == (ident.User{}) {
-		c.JSON(http.StatusOK, callback.CallBackFail("登录异常"))
-		return
-	}
+	userId := getUserId(c)
 	var req req.QueryPasswdReq
 	err := c.ShouldBindQuery(&req)
 	if err != nil {
@@ -91,7 +70,7 @@ func QueryPasswdList(c *gin.Context) {
 		c.JSON(http.StatusOK, callback.CallBackFail("参数错误"))
 		return
 	}
-	filter := bson.M{"userid": u.Id}
+	filter := bson.M{"userid": userId}
 	findoptions := &options.FindOptions{}
 	if req.PageSize > 0 {
 		findoptions.SetLimit(int64(req.PageSize))
@@ -119,16 +98,15 @@ func QueryPasswdList(c *gin.Context) {
 }
 
 func DeletePasswdById(c *gin.Context) {
-	u := checkToken(c)
-	if u == (ident.User{}) {
-		c.JSON(http.StatusOK, callback.CallBackFail("登录异常"))
-	}
+	userId := getUserId(c)
 	s := c.Param("id")
 	id, err := strconv.Atoi(s)
 	if err != nil {
 		log.Printf("Id转换错误,原因=%v", err)
+		c.JSON(http.StatusOK, callback.CallBackSuccess("删除成功"))
+		return
 	}
-	filter := bson.M{"id": id, "userid": u.Id}
+	filter := bson.M{"id": id, "userid": userId}
 	_, err = mongo.DeleteOne(context.Background(), filter)
 	if err != nil {
 		log.Printf("mongo删除异常,原因=%v", err)
@@ -138,13 +116,7 @@ func DeletePasswdById(c *gin.Context) {
 }
 
 func SearchPasswdList(c *gin.Context) {
-	s := c.Request.Header.Get("authId")
-	fmt.Printf("s: %v\n", s)
-	u := checkToken(c)
-	if u == (ident.User{}) {
-		c.JSON(http.StatusOK, callback.CallBackFail("登录异常"))
-		return
-	}
+	userId := getUserId(c)
 	var query req.QueryPasswdReq
 	err := c.ShouldBindQuery(&query)
 	if err != nil {
@@ -156,7 +128,7 @@ func SearchPasswdList(c *gin.Context) {
 		"topic": primitive.Regex{
 			Pattern: query.Q,
 		},
-		"userid": u.Id,
+		"userid": userId,
 	}
 	findoptions := &options.FindOptions{}
 	findoptions.SetLimit(int64(query.PageSize))
@@ -191,15 +163,6 @@ func genSonyflake() uint64 {
 	}
 	return id
 }
-
-func checkToken(c *gin.Context) ident.User {
-	s := c.Request.Header.Get("Authorization")
-	username, _ := crypt.AesDeCrypt(s)
-	filter := bson.M{"username": username}
-	var user ident.User
-	userMongo.FindOne(context.Background(), filter).Decode(&user)
-	return user
-}
 func Register(c *gin.Context) {
 	var param req.RegisterReq
 	err := c.ShouldBindJSON(&param)
@@ -208,7 +171,7 @@ func Register(c *gin.Context) {
 		c.JSON(http.StatusOK, callback.CallBackFail("参数错误"))
 		return
 	}
-	filter := bson.M{"userName": param.UserName}
+	filter := bson.M{"user_name": param.UserName}
 	var user ident.User
 	userMongo.FindOne(context.Background(), filter).Decode(&user)
 	if user != (ident.User{}) {
@@ -232,7 +195,7 @@ func Login(c *gin.Context) {
 	var user ident.User
 	s := crypt.Md5crypt(param.PassWord)
 	fmt.Printf("s: %v\n", s)
-	filter := bson.M{"username": param.UserName, "passwd": crypt.Md5crypt(param.PassWord)}
+	filter := bson.M{"user_name": param.UserName, "password": crypt.Md5crypt(param.PassWord)}
 	err = userMongo.FindOne(context.Background(), filter).Decode(&user)
 	if err != nil {
 		log.Printf("查询异常,原因=%v", err.Error())
@@ -248,13 +211,26 @@ func Login(c *gin.Context) {
 }
 func CheckLogin(c *gin.Context) {
 	token := c.Request.Header.Get("Authorization")
+	if token == "" {
+		c.AbortWithStatusJSON(http.StatusOK, callback.CallBackFail("登陆异常"))
+	}
 	username, _ := crypt.AesDeCrypt(token)
-	filter := bson.M{"username": username}
+	filter := bson.M{"user_name": username}
 	var user ident.User
 	userMongo.FindOne(context.Background(), filter).Decode(&user)
 	if user == (ident.User{}) {
 		c.AbortWithStatusJSON(http.StatusOK, callback.CallBackFail("登陆异常"))
 	}
 	c.Request.Header.Set("authId", strconv.Itoa(user.Id))
+	c.Set("userId", user.Id)
 	c.Next()
+}
+
+func getUserId(c *gin.Context) int {
+	s := c.Request.Header.Get("authId")
+	i, err := strconv.Atoi(s)
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusOK, callback.CallBackFail("登陆异常"))
+	}
+	return i
 }
