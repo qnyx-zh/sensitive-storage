@@ -2,13 +2,20 @@ package resp
 
 type PasswdInfosResp struct {
 	//用户名
-	username string
+	Username string
 	//密码
-	password string
+	Password string
 	//主题
-	topic string
+	Topic string
 	//id
-	id string
+	Id int
 	//说明
-	description string
+	Description string
+}
+
+type PasswdInfoPageResp struct {
+	result   []PasswdInfosResp
+	pageNum  int
+	pageSize int
+	total    int
 }
