@@ -178,6 +178,7 @@ func Register(c *gin.Context) {
 	userMongo.FindOne(context.Background(), filter).Decode(&user)
 	if user != (ident.User{}) {
 		c.JSON(http.StatusOK, callback.CallBackFail("用户已注册"))
+		return
 	}
 	user.UserName = param.UserName
 	user.Passwd = crypt.Md5crypt(param.PassWord)
