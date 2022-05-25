@@ -10,4 +10,12 @@ export class Notification {
             duration: 1.5
         });
     }
+
+    public static success = (message: string) => {
+        notification.open({
+            message: '提示',
+            description: message,
+            duration: 1.5
+        })
+    }
 }

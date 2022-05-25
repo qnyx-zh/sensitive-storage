@@ -5,6 +5,7 @@ import {BrowserRouter, HashRouter, Link, Route, Routes} from "react-router-dom";
 import {PasswdInfo} from "./pc/PasswdInfo";
 import {PasswdInfo as MPasswdInfo} from "./mobile/PasswdInfo";
 import RouterUtil from "./common/utils/RouterUtil";
+import {Login} from "./pc/Login";
 
 class App extends React.Component<any, any>{
 
@@ -20,7 +21,7 @@ class App extends React.Component<any, any>{
                 RouterUtil.push("/m/passwdInfo")
             } else {
                 //电脑
-                RouterUtil.push("/passwdInfo")
+                RouterUtil.push("/login")
             }
         }
     }
@@ -31,6 +32,7 @@ class App extends React.Component<any, any>{
                 <Routes>
                     {/*  <Route component={} path={"/login"}/>*/}
                     <Route path={"/passwdInfo"} element={<PasswdInfo/>}></Route>
+                    <Route path={"/login"} element={<Login/>}></Route>
                     <Route path={"/m/passwdInfo"} element={<MPasswdInfo/>}></Route>
                 </Routes>
             </BrowserRouter>
