@@ -13,7 +13,6 @@ import (
 	"sensitive-storage/util/callback"
 	"sensitive-storage/util/crypt"
 	"strconv"
-
 	"github.com/gin-gonic/gin"
 	"github.com/sony/sonyflake"
 	"go.mongodb.org/mongo-driver/bson"
@@ -210,7 +209,8 @@ func Login(c *gin.Context) {
 		return
 	}
 	token, _ := crypt.AesEncrypt(param.UserName)
-	c.JSON(http.StatusOK, callback.CallBackSuccess(token))
+	loginToken:=&resp.LoginResp{Token: token}
+	c.JSON(http.StatusOK, callback.CallBackSuccess(loginToken))
 }
 func CheckLogin(c *gin.Context) {
 	token := c.Request.Header.Get("Authorization")

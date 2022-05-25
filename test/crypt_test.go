@@ -11,7 +11,7 @@ import (
 	"testing"
 )
 
-func Test_copy(t *testing.T) {
+func Test_crypt(t *testing.T) {
 	d := []byte("asdfghjkloiuytre")
 	key := []byte("hgfedcba87654321")
 	fmt.Println("加密前:", string(d))
