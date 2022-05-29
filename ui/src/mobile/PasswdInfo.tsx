@@ -2,7 +2,16 @@ import React from 'react';
 import {Button, SearchBar, Space} from "antd-mobile";
 import css from './style/passwd-info.module.css';
 
-export class PasswdInfo extends React.Component<any, any> {
+class State {
+
+}
+
+export class PasswdInfo extends React.Component<any, State> {
+
+    constructor(props: any) {
+        super(props);
+        this.state = new State()
+    }
 
     ui_list = {
         render: () => {

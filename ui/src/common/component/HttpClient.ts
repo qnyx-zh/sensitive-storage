@@ -17,11 +17,10 @@ import {request} from "http";
 //         }
 //     }
 // );
-
+//
 axios.interceptors.request.use(
     (request: any) => {
-        request.url = "http://82.157.167.11:8099" +  + request.url
-
+        request.headers["Authorization"] = sessionStorage.getItem("auth")
         return request
     }
 )

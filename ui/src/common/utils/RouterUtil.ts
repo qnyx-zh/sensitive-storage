@@ -1,7 +1,7 @@
 export default class RouterUtil {
 
     public static push = (url: string, params?: { [key: string]: any }) => {
-        let ownerHref = window.location.href
+        let ownerHref = window.location.origin
         if (ownerHref.endsWith("/")) {
             ownerHref = ownerHref.substring(0, ownerHref.length - 1)
         }
