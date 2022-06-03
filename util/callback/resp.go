@@ -5,7 +5,7 @@ import (
 	"sensitive-storage/module/resp"
 )
 
-func CallBackSuccess(data interface{}) resp.Resp {
+func Success(data interface{}) resp.Resp {
 	result := &resp.Resp{
 		Status: constant.RespSuccessStr,
 		Code:   constant.RespSuccess,
@@ -14,7 +14,7 @@ func CallBackSuccess(data interface{}) resp.Resp {
 	return *result
 }
 
-func CallBackFail(msg string) resp.Resp {
+func BackFail(msg string) resp.Resp {
 	result := &resp.Resp{
 		Status: constant.RespFailStr,
 		Code:   constant.RespFail,
