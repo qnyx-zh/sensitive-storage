@@ -84,15 +84,8 @@ func QueryPasswdList(c *gin.Context) {
 		log.Printf("查询异常,原因=%v", err)
 		c.JSON(http.StatusOK, callback.BackFail("数据不存在"))
 	}
-	var result resp.PasswdInfosResp
 	var results []resp.PasswdInfosResp
-	for cur.Next(context.Background()) {
-		err = cur.Decode(&result)
-		if err != nil {
-			log.Printf("查询绑定异常,原因=%v", err)
-		}
-		results = append(results, result)
-	}
+	cur.All(context.Background(), &results)
 	c.JSON(http.StatusOK, callback.Success(resp.Passwd{Passwd: results}))
 
 }
