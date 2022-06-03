@@ -5,6 +5,7 @@ import {BrowserRouter, HashRouter, Link, Route, Routes} from "react-router-dom";
 import {PasswdInfo} from "./pc/PasswdInfo";
 import {PasswdInfo as MPasswdInfo} from "./mobile/PasswdInfo";
 import {Login as MLogin} from "./mobile/Login"
+import {Register as MRegister} from "./mobile/Register"
 import RouterUtil from "./common/utils/RouterUtil";
 import {Login} from "./pc/Login";
 
@@ -35,6 +36,7 @@ class App extends React.Component<any, any>{
                     <Route path={"/passwdInfo"} element={<PasswdInfo/>}></Route>
                     <Route path={"/login"} element={<Login/>}></Route>
                     <Route path={"/m/login"} element={<MLogin/>}></Route>
+                    <Route path={"/m/register"} element={<MRegister/>}></Route>
                     <Route path={"/m/passwdInfo"} element={<MPasswdInfo/>}></Route>
                 </Routes>
             </BrowserRouter>

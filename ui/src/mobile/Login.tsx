@@ -1,5 +1,7 @@
 import React from 'react';
-import {Grid, Input} from "antd-mobile";
+import {Button, Grid, Input} from "antd-mobile";
+import RouterUtil from "../common/utils/RouterUtil";
+import RouterURL from "../common/env/RouterURL";
 
 class State {
 }
@@ -13,7 +15,7 @@ export class Login extends React.Component<any, State> {
 
     render() {
         return <div style={{
-            backgroundColor: "#f7f7f7"
+            // backgroundColor: "#f7f7f7"
         }}>
             <div style={{
 
@@ -44,7 +46,19 @@ export class Login extends React.Component<any, State> {
                             <Input placeholder={"请输入密码"}/>
                         </Grid.Item>
                     </Grid>
-
+                    <Grid style={{
+                        marginTop: '2rem'
+                    }} columns={2} gap={2}>
+                        <Grid.Item>
+                            <Button onClick={() => {
+                                RouterUtil.push(RouterURL.M_REGISTER)
+                            }
+                            }>注册</Button>
+                        </Grid.Item>
+                        <Grid.Item>
+                            <Button>登录</Button>
+                        </Grid.Item>
+                    </Grid>
                 </div>
             </div>
         </div>;
