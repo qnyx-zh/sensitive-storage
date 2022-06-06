@@ -11,6 +11,7 @@ import Resp from "../common/model/HttpModel";
 import HttpURL from "../common/env/HttpURL";
 import StringUtil from "../common/utils/StringUtil";
 import {Notification} from "../common/component/Notification";
+import {FilterValue, SorterResult, TablePaginationConfig} from "antd/lib/table/interface";
 
 class TableRow {
     id = ""
@@ -22,6 +23,7 @@ class TableRow {
 }
 
 class FormData {
+    id = ""
     username = ""
     password = ""
     topic = ""
@@ -30,8 +32,20 @@ class FormData {
 
 class State {
     tableData: Array<TableRow> = []
+    pager = {
+        pageNum: 0,
+        pageSize: 10
+    }
     dialogVisible: boolean = false
-    formData: FormData = new FormData()
+    formData = new FormData()
+    pagerConfig = new PagerConfig()
+}
+
+class PagerConfig implements TablePaginationConfig {
+    defaultCurrent = 1
+    defaultPageSize = 10
+    current = 1
+    pageSize? = 10
 }
 
 class Props {
@@ -147,7 +161,9 @@ export class PasswdInfo extends React.Component<Props, State> {
             })
         },
         loadData: () => {
-            const url = HttpURL.GET_PASSWD_LIST
+            const pageNum = this.state.pagerConfig.current - 1
+            const pageSize = this.state.pagerConfig.pageSize
+            const url = HttpURL.GET_PASSWD_LIST + "?pageNum=" + pageNum + "&pageSize=" + pageSize
             HttpClient.get(url, resp => {
                 let _tableData = resp.data.passwds
                 _tableData = _tableData.map((v: TableRow) => {
@@ -168,6 +184,30 @@ export class PasswdInfo extends React.Component<Props, State> {
                     tableData: resp.data.passwds
                 })
             })
+        },
+        onChange: (pagination: TablePaginationConfig, filters: Record<string, FilterValue | null>, sorter: SorterResult<any>, extra: { currentDataSource: [], action: ("paginate" | "sort" | "filter") }) => {
+            if (extra.action === "paginate" && pagination.current) {
+                const pageNum = pagination.current - 1
+                const pageSize = pagination.pageSize
+                this.setState({
+                    pagerConfig: {
+                        ...this.state.pagerConfig,
+                        pageSize: pageSize,
+                        current: pageNum
+                    }
+                })
+                this.ui_table.loadData()
+            }
+        },
+        render: () => {
+            return <Table
+                rowKey={"id"}
+                className="components-table-demo-nested"
+                columns={this.ui_table.columns}
+                // @ts-ignore
+                onChange={this.ui_table.onChange}
+                pagination={this.state.pagerConfig}
+                dataSource={this.state.tableData}/>
         }
     }
 
@@ -198,6 +238,15 @@ export class PasswdInfo extends React.Component<Props, State> {
                 return
             }
             const url = HttpURL.POST_PASSWD
+            // for (let i = 0; i <100; i++) {
+            //     HttpClient.post(url, {
+            //         ...this.state.formData,
+            //         topic: i + "<==>" + this.state.formData.topic
+            //     }, (resp: Resp) => {
+            //         this.ui_dialogs.doClose();
+            //         this.ui_table.loadData();
+            //     });
+            // }
             HttpClient.post(url, this.state.formData, (resp: Resp) => {
                 this.ui_dialogs.doClose();
                 this.ui_table.loadData();
@@ -206,6 +255,7 @@ export class PasswdInfo extends React.Component<Props, State> {
         doClear: () => {
             this.setState({
                 formData: {
+                    id: "",
                     username: "",
                     password: "",
                     topic: "",
@@ -214,7 +264,6 @@ export class PasswdInfo extends React.Component<Props, State> {
             })
         },
         openEditForm: (id?: string) => {
-            this.ui_dialogs.doClear()
             const showFn = () => {
                 this.setState({
                         dialogVisible: true
@@ -241,17 +290,17 @@ export class PasswdInfo extends React.Component<Props, State> {
                        onOk={this.ui_dialogs.doOk}
                        visible={this.state.dialogVisible}>
                     <Form {...this.ui_dialogs.layout}>
-                        <Form.Item label={"标题"} name={"topic"} rules={[{required: true, message: '请输入标题'}]}>
+                        <Form.Item label={"标题"} rules={[{required: true, message: '请输入标题'}]}>
                             <Input value={this.state.formData.topic} onChange={(val) => {
                                 this.setState({formData: ObjectUtil.getNewProperty(this.state, "formData.topic", val.target.value)})
                             }}/>
                         </Form.Item>
-                        <Form.Item label={"用户名"} name={"username"} rules={[{required: true, message: '请输入用户名'}]}>
+                        <Form.Item label={"用户名"} rules={[{required: true, message: '请输入用户名'}]}>
                             <Input value={this.state.formData.username} onChange={(val) => {
                                 this.setState({formData: ObjectUtil.getNewProperty(this.state, "formData.username", val.target.value)})
                             }}/>
                         </Form.Item>
-                        <Form.Item label={"密码"} name={"password"} rules={[{required: true, message: '请输入密码'}]}>
+                        <Form.Item label={"密码"} rules={[{required: true, message: '请输入密码'}]}>
                             <Input value={this.state.formData.password} onChange={(val) => {
                                 this.setState({formData: ObjectUtil.getNewProperty(this.state, "formData.password", val.target.value)})
                             }}/>
@@ -281,6 +330,7 @@ export class PasswdInfo extends React.Component<Props, State> {
         return (<div className={css.passwdBody}>
             <Row>
                 <Button type={"primary"} onClick={() => {
+                    this.ui_dialogs.doClear()
                     this.ui_dialogs.openEditForm()
                 }}>添加</Button>
                 <BlankElement/>
@@ -288,11 +338,7 @@ export class PasswdInfo extends React.Component<Props, State> {
                 <BlankElement/>
             </Row>
             <BlankRow/>
-            <Table
-                rowKey={"id"}
-                className="components-table-demo-nested"
-                columns={this.ui_table.columns}
-                dataSource={this.state.tableData}/>
+            {this.ui_table.render()}
             {this.ui_dialogs.render()}
         </div>);
     }

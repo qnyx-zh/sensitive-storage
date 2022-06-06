@@ -5,7 +5,7 @@ import Resp from "../model/HttpModel";
 import RouterURL from "../env/RouterURL";
 import RouterUtil from "../utils/RouterUtil";
 import {Notification} from "./Notification";
-import {request} from "http";
+import JSONBig from "json-bigint"
 
 // axios.interceptors.response.use(
 //     (response: any) => {
@@ -18,6 +18,12 @@ import {request} from "http";
 //     }
 // );
 //
+
+// axios.defaults.transformResponse = [data => {
+//     return JSONBig.parse(data)
+// }]
+
+
 axios.interceptors.request.use(
     (request: any) => {
         request.headers["Authorization"] = sessionStorage.getItem("auth")
