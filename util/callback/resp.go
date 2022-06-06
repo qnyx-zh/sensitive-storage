@@ -5,11 +5,19 @@ import (
 	"sensitive-storage/module/resp"
 )
 
-func Success(data interface{}) resp.Resp {
+func SuccessData(data interface{}) resp.Resp {
 	result := &resp.Resp{
 		Status: constant.RespSuccessStr,
 		Code:   constant.RespSuccess,
 		Data:   data,
+	}
+	return *result
+}
+
+func Success() resp.Resp {
+	result := &resp.Resp{
+		Status: constant.RespSuccessStr,
+		Code:   constant.RespSuccess,
 	}
 	return *result
 }

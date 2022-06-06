@@ -1,19 +1,18 @@
 package main
 
 import (
+	"github.com/gin-gonic/gin"
+	"gopkg.in/ini.v1"
+	"log"
 	"net/http"
 	"sensitive-storage/router"
-
-	"github.com/gin-gonic/gin"
+	"sensitive-storage/service"
 )
 
 var db = make(map[string]string)
 
 func setupRouter() *gin.Engine {
-	// Disable Console Color
-	// gin.DisableConsoleColor()
 	r := gin.Default()
-
 	// Ping test
 	r.GET("/ping", func(c *gin.Context) {
 		c.String(http.StatusOK, "pong")
@@ -69,9 +68,19 @@ func setupRouter() *gin.Engine {
 }
 
 func main() {
+	conf, err := ini.Load("config/my.ini")
+	if err != nil {
+		log.Fatal("配置文件读取失败, err = ", err)
+	}
 	r := setupRouter()
 	r.Use(router.Cors())
 	r.Use(gin.Recovery())
-	router.SetupRouter(r)
-	r.Run(":8099")
+	//初始化路由
+	router.InitRouter(r)
+	//初始化数据库连接
+	db := service.InitDataBase(conf)
+	defer db.Close()
+	//设置端口号启动
+	port := ":" + conf.Section("").Key("port").String()
+	r.Run(port)
 }
