@@ -17,7 +17,7 @@ func NewPage(cur, size, total int, data interface{}) *Page {
 }
 
 type BaseField struct {
-	Id        uint `gorm:"column:id;primaryKey" json:"id"`
+	Id        uint `gorm:"column:id;type:integer;primaryKey;autoIncrement" json:"id"`
 	CreatedAt int  `gorm:"column:createTime;type:long;autoCreateTime:milli" json:"createTime"`
 	UpdatedAt int  `gorm:"column:updateTime;type:long;autoUpdateTime:milli" json:"updateTime"`
 }
