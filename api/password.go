@@ -8,6 +8,9 @@ type PasswordApi struct {
 }
 
 func (p *PasswordApi) Save(c *gin.Context) {
+	User.CheckLogin(c)
+	userId := User.GetUserId(c)
+	c.JSON(100, userId)
 	//var saveInfoReq req.SavePassword
 	//if err := c.ShouldBindJSON(&saveInfoReq); err != nil {
 	//	c.JSON(http.StatusBadRequest, callback.BackFail("参数错误"))

@@ -1,6 +1,8 @@
 package main
 
 import (
+	"github.com/gin-contrib/sessions"
+	"github.com/gin-contrib/sessions/cookie"
 	"github.com/gin-gonic/gin"
 	"gopkg.in/ini.v1"
 	"log"
@@ -75,6 +77,8 @@ func main() {
 	r := setupRouter()
 	r.Use(router.Cors())
 	r.Use(gin.Recovery())
+	store := cookie.NewStore([]byte("wodemiyao"))
+	r.Use(sessions.Sessions("sessionId", store))
 	//初始化路由
 	router.InitRouter(r)
 	//初始化数据库连接
