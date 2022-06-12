@@ -23,7 +23,7 @@ class TableRow {
 }
 
 class FormData {
-    id = ""
+    id = 0
     username = ""
     password = ""
     topic = ""
@@ -46,6 +46,7 @@ class PagerConfig implements TablePaginationConfig {
     defaultPageSize = 10
     current = 1
     pageSize? = 10
+    total = 0
 }
 
 class Props {
@@ -54,6 +55,7 @@ class Props {
 export class PasswdInfo extends React.Component<Props, State> {
 
     private ui_table = {
+        searchVal: "",
         columns: [
             {
                 title: '标题',
@@ -163,7 +165,10 @@ export class PasswdInfo extends React.Component<Props, State> {
         loadData: () => {
             const pageNum = this.state.pagerConfig.current - 1
             const pageSize = this.state.pagerConfig.pageSize
-            const url = HttpURL.GET_PASSWD_LIST + "?pageNum=" + pageNum + "&pageSize=" + pageSize
+            let url = HttpURL.GET_PASSWD_LIST + "?pageNum=" + pageNum + "&pageSize=" + pageSize
+            if (StringUtil.hasText(this.ui_table.searchVal)) {
+                url = url + "&q=" + this.ui_table.searchVal
+            }
             HttpClient.get(url, resp => {
                 let _tableData = resp.data.passwds
                 _tableData = _tableData.map((v: TableRow) => {
@@ -173,30 +178,27 @@ export class PasswdInfo extends React.Component<Props, State> {
                     }
                 })
                 this.setState({
-                    tableData: _tableData
+                    tableData: _tableData,
+                    pagerConfig: {
+                        ...this.state.pagerConfig,
+                        total: resp.data.total
+                    }
                 })
             })
         },
         doSearch: (text: string) => {
-            const url = HttpURL.GET_PASSWD_SEARCH + "?q=" + text
-            HttpClient.get(url, resp => {
-                this.setState({
-                    tableData: resp.data.passwds
-                })
-            })
+            this.ui_table.searchVal = text
+            this.ui_table.loadData()
         },
         onChange: (pagination: TablePaginationConfig, filters: Record<string, FilterValue | null>, sorter: SorterResult<any>, extra: { currentDataSource: [], action: ("paginate" | "sort" | "filter") }) => {
             if (extra.action === "paginate" && pagination.current) {
-                const pageNum = pagination.current - 1
-                const pageSize = pagination.pageSize
                 this.setState({
                     pagerConfig: {
                         ...this.state.pagerConfig,
-                        pageSize: pageSize,
-                        current: pageNum
+                        pageSize: pagination.pageSize,
+                        current: pagination.current
                     }
-                })
-                this.ui_table.loadData()
+                }, () => this.ui_table.loadData())
             }
         },
         render: () => {
@@ -241,7 +243,8 @@ export class PasswdInfo extends React.Component<Props, State> {
             // for (let i = 0; i <100; i++) {
             //     HttpClient.post(url, {
             //         ...this.state.formData,
-            //         topic: i + "<==>" + this.state.formData.topic
+            //         topic: i + "<==>" + this.state.formData.topic,
+            //         id: 0
             //     }, (resp: Resp) => {
             //         this.ui_dialogs.doClose();
             //         this.ui_table.loadData();
@@ -255,7 +258,7 @@ export class PasswdInfo extends React.Component<Props, State> {
         doClear: () => {
             this.setState({
                 formData: {
-                    id: "",
+                    id: 0,
                     username: "",
                     password: "",
                     topic: "",
@@ -320,7 +323,6 @@ export class PasswdInfo extends React.Component<Props, State> {
         super(props);
         this.state = new State()
     }
-
 
     componentDidMount() {
         this.ui_table.loadData()

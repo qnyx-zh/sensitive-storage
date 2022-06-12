@@ -1,9 +1,16 @@
 export default class StringUtil {
-    static hasText(value: string): boolean {
-        return value !== undefined && value !== null && value.trim() != "";
+    static hasText(value: string|number|undefined): boolean {
+        if (!value) {
+            return false
+        }
+        if (typeof value == "string") {
+            return value.trim() !== "";
+        }else {
+            return true
+        }
     }
 
-    static isBlank(value: string): boolean {
+    static isBlank(value: string|number): boolean {
         return !this.hasText(value);
     }
 

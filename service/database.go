@@ -9,23 +9,27 @@ import (
 	"gorm.io/gorm/schema"
 	"log"
 	"reflect"
+	"sensitive-storage/constant"
 	"sensitive-storage/module/entity"
 	"time"
 )
 
 var client *gorm.DB
 
+var Sqlx *gorm.DB
+
 func InitDataBase(conf *ini.File) *sql.DB {
 	var err error
 	dbName := conf.Section("sqlite").Key("db_name").String()
 	client, err = gorm.Open(sqlite.Open(dbName), &gorm.Config{
-		SkipDefaultTransaction: false, //跳过默认事务
+		SkipDefaultTransaction: false, // 跳过默认事务
 		NamingStrategy: schema.NamingStrategy{
 			SingularTable: false, // 设置为true时，表名为复数形式 User的表名应该是user
-			TablePrefix:   "t_",  //表名前缀 User的表名应该是t_user
+			TablePrefix:   "t_",  // 表名前缀 User的表名应该是t_user
 		},
-		DisableForeignKeyConstraintWhenMigrating: true, //设置成为逻辑外键(在物理数据库上没有外键，仅体现在代码上)
+		DisableForeignKeyConstraintWhenMigrating: true, // 设置成为逻辑外键(在物理数据库上没有外键，仅体现在代码上)
 	})
+	Sqlx = client
 	if err != nil {
 		log.Fatalln("数据库连接错误")
 	}
@@ -97,7 +101,7 @@ func (r *generalDB) Save(entity interface{}) int64 {
 	result := client.Create(entity)
 	if result.Error != nil {
 		log.Printf("%v", result.Error)
-		return 0
+		return constant.DBSaveFail
 	}
 	return result.RowsAffected
 }
@@ -108,12 +112,12 @@ type GeneralQ struct {
 	in    map[string]interface{}
 	notIn map[string]interface{}
 	or    map[string]interface{}
-	q     []string     //查询字段
-	asc   []string     //升序字段
-	desc  []string     //降序
-	page  *entity.Page //分页
-	sql   string       //自定义sql
-	group []string     //分组
+	q     []string     // 查询字段
+	asc   []string     // 升序字段
+	desc  []string     // 降序
+	page  *entity.Page // 分页
+	sql   string       // 自定义sql
+	group []string     // 分组
 }
 type generalDB struct {
 }

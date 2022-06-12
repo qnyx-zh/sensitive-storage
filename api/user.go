@@ -1,7 +1,6 @@
 package api
 
 import (
-	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 	"log"
 	"net/http"
@@ -26,20 +25,20 @@ func (u *UserApi) Register(c *gin.Context) {
 		c.JSON(http.StatusOK, callback.BackFail("参数错误"))
 		return
 	}
-	//service.GeneralDB.GetById(&entity.User{},)
-	//user := service.User.QueryByUsername(param.Username)
-	//if user != nil {
+	// service.GeneralDB.GetById(&entity.User{},)
+	// user := service.User.QueryByUsername(param.Username)
+	// if user != nil {
 	//	c.JSON(http.StatusOK, callback.BackFail("用户已注册"))
 	//	return
-	//}
+	// }
 	userEntity := &entity.User{}
 	copier.CopyVal(param, userEntity)
 	save := service.GeneralDB.Save(userEntity)
 	c.JSON(http.StatusOK, callback.SuccessData(save))
-	//c.JSON(http.StatusBadRequest, callback.BackFail("网络异常"))
+	// c.JSON(http.StatusBadRequest, callback.BackFail("网络异常"))
 }
 
-//Login 用户登陆
+// Login 用户登陆
 func (u *UserApi) Login(c *gin.Context) {
 	var param req.Login
 	err := c.ShouldBindJSON(&param)
@@ -54,14 +53,12 @@ func (u *UserApi) Login(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, callback.BackFail("用户不存在或密码错误"))
 		return
 	}
-	session := sessions.Default(c)
-	session.Set("userId", query.(entity.User).BaseField.Id)
 	token, _ := crypt.AesEncrypt(param.Username)
 	loginToken := &resp.Login{Token: token}
 	c.JSON(http.StatusOK, callback.SuccessData(loginToken))
 }
 
-//CheckLogin 检查是否登陆
+// CheckLogin 检查是否登陆
 func (u *UserApi) CheckLogin(c *gin.Context) {
 	token := c.Request.Header.Get("Authorization")
 	if token == "" {
@@ -79,7 +76,7 @@ func (u *UserApi) CheckLogin(c *gin.Context) {
 	c.Next()
 }
 
-//GetUserId 获取用户id
+// GetUserId 获取用户id
 func (u *UserApi) GetUserId(c *gin.Context) uint {
 	authId := c.GetUint("authId")
 	return authId
