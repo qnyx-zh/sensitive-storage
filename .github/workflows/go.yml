@@ -39,10 +39,9 @@ jobs:
         images: ${{ secrets.DOCKER_USERNAME }}/sensitive-storage:0.0.1
 
     - name: Build and push Docker image
-      uses: docker/build-push-action@ad44023a93711e3deb337508980b4b5e9bcdc5dc
-      with:
-        context: .
-        push: true
-        tags: 0.0.1
-        labels: the_label="lb"
+      working-directory: ../
+#      uses: docker/build-push-action@ad44023a93711e3deb337508980b4b5e9bcdc5dc
+      run: |
+        docker build -t kiririx/passwd:0.0.1 .
+        docker push kiririx/passwd:0.0.1
 
