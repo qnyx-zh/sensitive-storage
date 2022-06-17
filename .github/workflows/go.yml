@@ -45,3 +45,15 @@ jobs:
         docker build -t kiririx/passwd:latest .
         docker push kiririx/passwd:latest
 
+    - name: Set up Go
+      uses: actions/setup-go@v3
+      with:
+        go-version: 1.18
+
+    - name: send upgrade message
+      working-directory: ./workflow/client
+
+      run: go run main.go -sa ${{ secrets.UPGRADE_ADDR }}
+
+
+
