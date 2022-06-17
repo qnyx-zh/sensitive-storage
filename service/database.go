@@ -20,7 +20,7 @@ var Sqlx = client
 
 func InitDataBase() *sql.DB {
 	var err error
-	dbName := "sensitive.db"
+	dbName := "./data/sensitive.db"
 	client, err = gorm.Open(sqlite.Open(dbName), &gorm.Config{
 		SkipDefaultTransaction: false, // 跳过默认事务
 		NamingStrategy: schema.NamingStrategy{
