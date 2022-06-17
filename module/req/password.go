@@ -1,14 +1,21 @@
 package req
 
 type SavePassword struct {
-	UserName    string `json:"username" bson:"user_name"`
-	PassWord    string `json:"password" bson:"password"`
-	Description string `json:"description"  bson:"description"`
-	Topic       string `json:"topic" bson:"topic"`
+	Id          uint   `json:"id"`
+	Username    string `json:"username"`
+	Password    string `json:"password"`
+	Description string `json:"description"`
+	Topic       string `json:"topic"`
 }
 type QueryPasswd struct {
-	Id       string `form:"id"`       //集合id
-	Q        string `form:"q"`        //关键字
-	PageNum  int    `form:"pageNum"`  //分页: 第几页?从0开始
-	PageSize int    `form:"pageSize"` //分页: 每页数据量
+	Q        string `form:"q"`                           // 关键字
+	PageNum  *uint  `form:"pageNum" binding:"required"`  // 分页: 第几页?从0开始
+	PageSize *uint  `form:"pageSize" binding:"required"` // 分页: 每页数据量
+}
+
+func (sp *SavePassword) ToUpdate() bool {
+	if sp.Id > 0 {
+		return true
+	}
+	return false
 }

@@ -2,62 +2,86 @@ package api
 
 import (
 	"github.com/gin-gonic/gin"
+	"log"
+	"net/http"
+	"sensitive-storage/module/entity"
+	"sensitive-storage/module/req"
+	"sensitive-storage/service"
+	"sensitive-storage/util/callback"
+	"sensitive-storage/util/copier"
 )
 
 type PasswordApi struct {
 }
 
-func (p *PasswordApi) Save(c *gin.Context) {
-	User.CheckLogin(c)
+func (*PasswordApi) SavePassword(c *gin.Context) {
+	var saveReq req.SavePassword
+	if err := c.ShouldBindJSON(&saveReq); err != nil {
+		c.JSON(http.StatusBadRequest, callback.BackFail("参数错误"))
+		return
+	}
 	userId := User.GetUserId(c)
-	c.JSON(100, userId)
-	//var saveInfoReq req.SavePassword
-	//if err := c.ShouldBindJSON(&saveInfoReq); err != nil {
-	//	c.JSON(http.StatusBadRequest, callback.BackFail("参数错误"))
-	//	return
-	//}
-	//userId := User.GetUserId(c)
-	//passwd := &entity.Password{}
-	//if isSuccessful := service.Password.Save(passwd, userId); isSuccessful {
-	//	c.JSON(http.StatusOK, callback.Success())
-	//	return
-	//}
-	//c.JSON(http.StatusBadRequest, callback.BackFail("保存失败"))
+	passwd := &entity.Password{}
+	err := copier.CopyVal(saveReq, passwd)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, callback.BackFail("参数错误"))
+		return
+	}
+	if saveReq.ToUpdate() {
+		passwd.Id = saveReq.Id
+	}
+	if isSuccessful := service.Password.Save(passwd, userId); isSuccessful {
+		c.JSON(http.StatusOK, callback.Success())
+		return
+	}
+	c.JSON(http.StatusBadRequest, callback.BackFail("保存失败"))
 }
 
-func (p *PasswordApi) QueryById(c *gin.Context) {
-	//id := c.Param("id")
-	//userId := User.GetUserId(c)
-	//password := service.QueryPasswordById(id, userId)
-	//c.JSON(http.StatusOK, callback.Success(password))
+func (*PasswordApi) GetPassword(c *gin.Context) {
+	var idReq req.IdReq
+	if err := c.ShouldBindUri(&idReq); err != nil {
+		c.JSON(http.StatusBadRequest, callback.BackFail("参数错误"))
+		return
+	}
+	password := service.Password.QueryPasswordById(idReq.Id)
+	c.JSON(http.StatusOK, callback.SuccessData(password))
 }
 
-func (p *PasswordApi) QueryList(c *gin.Context) {
-	//userId := User.GetUserId(c)
-	//var reqParam req.QueryPasswd
-	//if err := c.ShouldBindQuery(&reqParam); err != nil {
-	//	log.Printf("参数绑定错误,原因=%v", err)
-	//	c.JSON(http.StatusOK, callback.BackFail("参数错误"))
-	//	return
-	//}
-	//c.JSON(http.StatusOK, callback.Success(service.QueryList(reqParam, userId)))
+func (*PasswordApi) GetPasswords(c *gin.Context) {
+	userId := User.GetUserId(c)
+	passwdReq := req.QueryPasswd{}
+	if err := c.ShouldBindQuery(&passwdReq); err != nil {
+		log.Printf("参数绑定错误,原因=%v", err)
+		c.JSON(http.StatusOK, callback.BackFail("参数错误"))
+		return
+	}
+	var passwords []entity.Password
+	var total int64
+	if passwdReq.Q == "" {
+		passwords, total = service.Password.QueryPasswordListByUserId(userId, *passwdReq.PageNum, *passwdReq.PageSize)
+	} else {
+		passwords, total = service.Password.FilterPasswordListByUserId(userId, passwdReq.Q, *passwdReq.PageNum, *passwdReq.PageSize)
+	}
+	if len(passwords) < 1 {
+		c.JSON(http.StatusOK, callback.SuccessData(map[string]interface{}{
+			"passwds": [0]entity.Password{},
+			"total":   0,
+		}))
+	} else {
+		c.JSON(http.StatusOK, callback.SuccessData(map[string]interface{}{
+			"passwds": passwords,
+			"total":   total,
+		}))
+	}
 }
 
-func (p *PasswordApi) DeleteById(c *gin.Context) {
-	//userId := User.GetUserId(c)
-	//id := c.Param("id")
-	//service.DeleteById(id, userId)
-	//c.JSON(http.StatusOK, callback.Success(service.DeleteById(id, userId)))
-}
-
-func (p *PasswordApi) SearchPasswdList(c *gin.Context) {
-	//userId := User.GetUserId(c)
-	//var query req.QueryPasswd
-	//err := c.ShouldBindQuery(&query)
-	//if err != nil {
-	//	log.Printf("参数绑定,原因=%v", err.Error())
-	//	c.JSON(http.StatusOK, callback.BackFail("参数错误"))
-	//	return
-	//}
-	//c.JSON(http.StatusOK, callback.Success(service.SearchList(query, userId)))
+func (*PasswordApi) DeletePassword(c *gin.Context) {
+	var idReq req.IdReq
+	if err := c.ShouldBindUri(&idReq); err != nil {
+		log.Printf("参数绑定错误,原因=%v", err)
+		c.JSON(http.StatusOK, callback.BackFail("参数错误"))
+		return
+	}
+	service.Password.DeleteById(idReq.Id)
+	c.JSON(http.StatusOK, callback.Success())
 }

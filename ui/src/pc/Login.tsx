@@ -1,6 +1,6 @@
 import React from "react";
 import css from "./style/login.module.css"
-import {Button, Col, Input, Modal, Row} from "antd";
+import {Button, Checkbox, Col, Input, Modal, Row} from "antd";
 import BlankRow from "./component/BlankRow";
 import {Notification} from "../common/component/Notification";
 import StringUtil from "../common/utils/StringUtil";
@@ -30,6 +30,8 @@ class State {
     regVisible = false
     regForm = new RegForm()
     loginForm = new LoginForm()
+    autoLogin = false
+    remember = false
 }
 
 class Props {
@@ -135,12 +137,17 @@ export class Login extends React.Component<Props, State> {
     }
 
     private ui_body = {
+        // 登录func，如果勾选了自动登录，那么把token保存在localStorage里， 否则保存在sessionStorage里
         doLogin: () => {
             HttpClient.post(HttpURL.POST_LOGIN, {
                 username: this.state.loginForm.username,
                 password: this.state.loginForm.password
             }, resp => {
-                sessionStorage.setItem("auth", resp.data.token)
+                if (localStorage.getItem("autoLogin") === "true") {
+                    localStorage.setItem("auth", resp.data.token)
+                }else {
+                    sessionStorage.setItem("auth", resp.data.token)
+                }
                 RouterUtil.push(RouterURL.PASSWD_INFO)
             }, err => {
                 if (err)
@@ -164,6 +171,22 @@ export class Login extends React.Component<Props, State> {
                         <Input.Password value={this.state.loginForm.password} onChange={(val) => {
                             this.setState({loginForm: ObjectUtil.getNewProperty(this.state, "loginForm.password", val.target.value)})
                         }}/>
+                    </Col>
+                </Row>
+                <BlankRow/>
+                <Row>
+                    <Col span={4}></Col>
+                    <Col span={10}>
+                        <Checkbox onChange={(e) => {
+                            const checked = e.target.checked
+                            localStorage.setItem("remember", String(checked))
+                        }}>记住密码</Checkbox>
+                    </Col>
+                    <Col span={10}>
+                        <Checkbox onChange={(e) => {
+                            const checked = e.target.checked
+                            localStorage.setItem("autoLogin", String(checked))
+                        }}>自动登录</Checkbox>
                     </Col>
                 </Row>
                 <BlankRow/>
