@@ -39,7 +39,7 @@ jobs:
         images: ${{ secrets.DOCKER_USERNAME }}/sensitive-storage:0.0.1
 
     - name: Build and push Docker image
-      working-directory: ../
+#      working-directory: ../sensitive-storage
 #      uses: docker/build-push-action@ad44023a93711e3deb337508980b4b5e9bcdc5dc
       run: |
         docker build -t kiririx/passwd:0.0.1 .
