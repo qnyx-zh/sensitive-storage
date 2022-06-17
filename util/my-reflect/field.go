@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-func IsBlank(i interface{}) bool {
+func IsBlank(i any) bool {
 	value := reflect.ValueOf(i)
 	switch value.Kind() {
 	case reflect.String:
@@ -37,7 +37,7 @@ func getColumnName(t reflect.StructField) string {
 	return t.Name
 }
 
-func GetNameAndValue(t interface{}) map[string]interface{} {
+func GetNameAndValue(t any) map[string]any {
 	tType := reflect.TypeOf(t)
 	if (tType.Kind() != reflect.Ptr) || (tType.Elem().Kind() != reflect.Struct) {
 		errors.New("实体必须为结构体/结构体数组指针")
@@ -45,7 +45,7 @@ func GetNameAndValue(t interface{}) map[string]interface{} {
 	}
 	tType = tType.Elem()
 	tValue := reflect.ValueOf(t).Elem()
-	m := make(map[string]interface{})
+	m := make(map[string]any)
 	fieldNum := tType.NumField()
 	for i := 0; i < fieldNum; i++ {
 		field := tType.Field(i)
@@ -58,7 +58,7 @@ func GetNameAndValue(t interface{}) map[string]interface{} {
 			}
 			continue
 		}
-		m[getColumnName(field)] = tValue.FieldByName(field.Name)
+		m[getColumnName(field)] = childV.Interface()
 	}
 	return m
 }

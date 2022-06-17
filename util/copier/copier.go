@@ -6,8 +6,8 @@ import (
 	"reflect"
 )
 
-// 结构体字段复制
-func CopyVal(src interface{}, tar interface{}) (err error) {
+// CopyVal 结构体字段复制
+func CopyVal(src any, tar any) (err error) {
 
 	defer func() {
 		if e := recover(); e != nil {

@@ -10,9 +10,9 @@ import (
 type userService struct {
 }
 
-func (u *userService) QueryByUsername(username string) interface{} {
+func (u *userService) QueryByUsername(username string) any {
 	var user entity.User
-	first := client.Where("username = ?", username).First(&user)
+	first := Client.Where("username = ?", username).First(&user)
 	if first.Error == gorm.ErrRecordNotFound {
 		return nil
 	}
@@ -20,8 +20,8 @@ func (u *userService) QueryByUsername(username string) interface{} {
 }
 
 func (u *userService) Save(user *entity.User) bool {
-	client.AutoMigrate()
-	result := client.Create(user)
+	Client.AutoMigrate()
+	result := Client.Create(user)
 	if result.Error != nil {
 		log.Printf("%v", result.Error)
 		return false
@@ -29,8 +29,8 @@ func (u *userService) Save(user *entity.User) bool {
 	return true
 }
 
-func (u *userService) Query(e *entity.User) interface{} {
-	first := client.First(e)
+func (u *userService) Query(e *entity.User) any {
+	first := Client.First(e)
 	if errors.Is(first.Error, gorm.ErrRecordNotFound) {
 		return nil
 	}

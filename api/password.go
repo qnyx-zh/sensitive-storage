@@ -2,62 +2,66 @@ package api
 
 import (
 	"github.com/gin-gonic/gin"
+	"net/http"
+	"sensitive-storage/module/entity"
+	"sensitive-storage/module/req"
+	"sensitive-storage/service"
+	"sensitive-storage/util/callback"
+	"sensitive-storage/util/copier"
+	"strconv"
 )
 
 type PasswordApi struct {
 }
 
 func (p *PasswordApi) Save(c *gin.Context) {
-	User.CheckLogin(c)
-	userId := User.GetUserId(c)
-	c.JSON(100, userId)
-	//var saveInfoReq req.SavePassword
-	//if err := c.ShouldBindJSON(&saveInfoReq); err != nil {
-	//	c.JSON(http.StatusBadRequest, callback.BackFail("参数错误"))
-	//	return
-	//}
-	//userId := User.GetUserId(c)
-	//passwd := &entity.Password{}
-	//if isSuccessful := service.Password.Save(passwd, userId); isSuccessful {
-	//	c.JSON(http.StatusOK, callback.Success())
-	//	return
-	//}
-	//c.JSON(http.StatusBadRequest, callback.BackFail("保存失败"))
+	var saveInfoReq req.SavePassword
+	if err := c.ShouldBindJSON(&saveInfoReq); err != nil {
+		c.JSON(http.StatusBadRequest, callback.BackFail("参数错误"))
+		return
+	}
+	userId := GetUserId(c)
+	passwd := &entity.Password{}
+	_ = copier.CopyVal(saveInfoReq, passwd)
+	passwd.UserId = userId
+	if rows := service.GeneralDB.Save(passwd); rows > 0 {
+		c.JSON(http.StatusOK, callback.Success())
+		return
+	}
+
+	c.JSON(http.StatusBadRequest, callback.BackFail("保存失败"))
 }
 
 func (p *PasswordApi) QueryById(c *gin.Context) {
-	//id := c.Param("id")
-	//userId := User.GetUserId(c)
-	//password := service.QueryPasswordById(id, userId)
-	//c.JSON(http.StatusOK, callback.Success(password))
+	id, _ := strconv.ParseUint(c.Param("id"), 10, 10)
+	userId := GetUserId(c)
+	passwd := entity.Password{UserId: userId, BaseField: entity.BaseField{Id: uint(id)}}
+	result := &entity.Password{}
+	err := service.GeneralDB.GetOne(&passwd, result)
+	if err != nil {
+		c.JSON(http.StatusOK, callback.SuccessData(&entity.Password{}))
+		return
+	}
+	c.JSON(http.StatusOK, callback.SuccessData(result))
 }
 
 func (p *PasswordApi) QueryList(c *gin.Context) {
-	//userId := User.GetUserId(c)
-	//var reqParam req.QueryPasswd
-	//if err := c.ShouldBindQuery(&reqParam); err != nil {
-	//	log.Printf("参数绑定错误,原因=%v", err)
-	//	c.JSON(http.StatusOK, callback.BackFail("参数错误"))
-	//	return
-	//}
-	//c.JSON(http.StatusOK, callback.Success(service.QueryList(reqParam, userId)))
+	userId := GetUserId(c)
+	page := GetPage(c)
+	service.GeneralDB.LambdaQuery().Eq("user_id", userId).Page(&[]entity.Password{}, page)
+	c.JSON(http.StatusOK, callback.SuccessData(page))
 }
 
 func (p *PasswordApi) DeleteById(c *gin.Context) {
-	//userId := User.GetUserId(c)
-	//id := c.Param("id")
-	//service.DeleteById(id, userId)
-	//c.JSON(http.StatusOK, callback.Success(service.DeleteById(id, userId)))
+	id := c.Param("id")
+	service.GeneralDB.RemoveById(&entity.Password{}, id)
+	c.JSON(http.StatusOK, callback.SuccessData(true))
 }
 
 func (p *PasswordApi) SearchPasswdList(c *gin.Context) {
-	//userId := User.GetUserId(c)
-	//var query req.QueryPasswd
-	//err := c.ShouldBindQuery(&query)
-	//if err != nil {
-	//	log.Printf("参数绑定,原因=%v", err.Error())
-	//	c.JSON(http.StatusOK, callback.BackFail("参数错误"))
-	//	return
-	//}
-	//c.JSON(http.StatusOK, callback.Success(service.SearchList(query, userId)))
+	userId := GetUserId(c)
+	q := c.Param("q")
+	GetPage(c)
+	page := service.Password.SearchPasswdList(userId, q, GetPage(c))
+	c.JSON(http.StatusOK, callback.SuccessData(page))
 }

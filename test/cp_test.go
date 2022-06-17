@@ -111,7 +111,7 @@ func Test_cp(t *testing.T) {
 	}
 }
 
-func test1(a interface{}) {
+func test1(a any) {
 	g := 0
 	ints := a.([]int)
 	ints[0] = 100
@@ -122,7 +122,7 @@ func test1(a interface{}) {
 	}
 }
 
-func conv(v reflect.Value) interface{} {
+func conv(v reflect.Value) any {
 	switch v.Kind() {
 	case reflect.String:
 		return v.String()

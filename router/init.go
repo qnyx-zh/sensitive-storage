@@ -20,7 +20,6 @@ func Cors() gin.HandlerFunc {
 			c.AbortWithStatus(204)
 			return
 		}
-
 		defer func() {
 			if err := recover(); err != nil {
 				log.Printf("Panic info is: %v", err)

@@ -6,39 +6,51 @@ import (
 	"gopkg.in/ini.v1"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 	"gorm.io/gorm/schema"
 	"log"
+	"os"
 	"reflect"
 	"sensitive-storage/module/entity"
-	myReflect "sensitive-storage/util/my-reflect"
+	"sensitive-storage/util/collection"
 	"strings"
 	"time"
 )
 
-var client *gorm.DB
+var Client *gorm.DB
 
 func InitDataBase(conf *ini.File) *sql.DB {
 	var err error
 	dbName := conf.Section("sqlite").Key("db_name").String()
-	client, err = gorm.Open(sqlite.Open(dbName), &gorm.Config{
+	newLogger := logger.New(
+		log.New(os.Stdout, "\r\n", log.LstdFlags), // io writer（日志输出的目标，前缀和日志包含的内容——译者注）
+		logger.Config{
+			SlowThreshold:             time.Second, // 慢 SQL 阈值
+			LogLevel:                  logger.Info, // 日志级别
+			IgnoreRecordNotFoundError: true,        // 忽略ErrRecordNotFound（记录未找到）错误
+			Colorful:                  false,       // 禁用彩色打印
+		},
+	)
+	Client, err = gorm.Open(sqlite.Open(dbName), &gorm.Config{
 		SkipDefaultTransaction: false, //跳过默认事务
 		NamingStrategy: schema.NamingStrategy{
 			SingularTable: false, // 设置为true时，表名为复数形式 User的表名应该是user
 			TablePrefix:   "t_",  //表名前缀 User的表名应该是t_user
 		},
 		DisableForeignKeyConstraintWhenMigrating: true, //设置成为逻辑外键(在物理数据库上没有外键，仅体现在代码上)
+		Logger:                                   newLogger,
 	})
 	if err != nil {
-		log.Fatalln("数据库连接错误")
+		log.Fatalln("数据库连接错误:", err)
 	}
-	pool, err := client.DB()
+	pool, err := Client.DB()
 	pool.SetMaxIdleConns(10)
 	pool.SetMaxOpenConns(10)
 	pool.SetConnMaxLifetime(time.Minute)
 	return pool
 }
 
-func (r *generalDB) GetById(entity interface{}, id interface{}) interface{} {
+func (r *generalDB) GetById(entity any, id any) any {
 	defer func() {
 		if e := recover(); e != nil {
 			log.Printf("异常=%v", e)
@@ -54,18 +66,18 @@ func (r *generalDB) GetById(entity interface{}, id interface{}) interface{} {
 	var result *gorm.DB
 	if typeOf.Kind() == reflect.String {
 		strId = id.(string)
-		result = client.First(entity, "id = ?", strId)
+		result = Client.First(entity, "id = ?", strId)
 	}
 	if typeOf.Kind() == reflect.Uint {
 		intId = id.(uint)
-		result = client.First(entity, intId)
+		result = Client.First(entity, intId)
 	}
 	if result.Error == gorm.ErrRecordNotFound {
 		return nil
 	}
 	return entity
 }
-func (r *generalDB) GetByIds(entity interface{}, ids interface{}) interface{} {
+func (r *generalDB) GetByIds(entity any, ids any) any {
 	defer func() {
 		if e := recover(); e != nil {
 			log.Printf("异常=%v", e)
@@ -80,23 +92,22 @@ func (r *generalDB) GetByIds(entity interface{}, ids interface{}) interface{} {
 	var result *gorm.DB
 	if idsType.Kind() == reflect.Array {
 		strIds = ids.([]string)
-		result = client.Where("id in ?", strIds).Find(entity)
-
+		result = Client.Where("id in ?", strIds).Find(entity)
 	}
 	if idsType.Kind() == reflect.Uint {
 		uintIds = ids.([]uint)
-		result = client.First(entity, uintIds)
+		result = Client.First(entity, uintIds)
 	}
 	if result.Error == gorm.ErrRecordNotFound {
 		return nil
 	}
 	return entity
 }
-func (r *generalDB) Save(entity interface{}) int64 {
-	if exist := client.Migrator().HasTable(entity); !exist {
-		client.AutoMigrate(entity)
+func (r *generalDB) Save(entity any) int64 {
+	if exist := Client.Migrator().HasTable(entity); !exist {
+		Client.AutoMigrate(entity)
 	}
-	result := client.Create(entity)
+	result := Client.Create(entity)
 	if result.Error != nil {
 		log.Printf("%v", result.Error)
 		return 0
@@ -104,47 +115,47 @@ func (r *generalDB) Save(entity interface{}) int64 {
 	return result.RowsAffected
 }
 
-func (r *generalDB) GetOne(e interface{}) interface{} {
-	sb := &StringBuilder{sb: &strings.Builder{}}
-	params := make([]interface{}, 0)
-	nameAndValue := myReflect.GetNameAndValue(e)
-	for k, v := range nameAndValue {
-		if !myReflect.IsBlank(v) {
-			sb.append("and ").append(k).append(" = ? ")
-			params = append(params, v)
+func (r *generalDB) GetOne(e any, result any) error {
+	tx := Client.Where(e).First(result)
+	if tx.Error != nil {
+		if tx.Error != gorm.ErrRecordNotFound {
+			log.Printf("sql异常,原因=%v", tx.Error.Error())
+			return tx.Error
 		}
 	}
-	var result entity.User
-	var sql string
-	if strings.HasPrefix(sb.toStr(), "and") {
-		sql = sb.toStr()[3:]
-	}
-	first := client.Where(sql, "zhanghao3", "1234567").First(&result)
-	if first.Error == gorm.ErrRecordNotFound {
-		return nil
-	}
-	return result
+	return nil
 }
 
-func (r *generalDB) GetList(e interface{}) interface{} {
-	sb := &StringBuilder{sb: &strings.Builder{}}
-	var params []interface{}
-	nameAndValue := myReflect.GetNameAndValue(e)
-	i := 0
-	for k, v := range nameAndValue {
-		if !myReflect.IsBlank(v) {
-			sb.append("and ").append(k).append(" = ? ")
-			params[i] = v
-			i++
-		}
+func (r *generalDB) GetList(e any, result any) error {
+	if first := Client.Where(e).Find(result); first.Error != nil && first.Error != gorm.ErrRecordNotFound {
+		log.Printf("sql异常,原因=%v", first.Error.Error())
+		return first.Error
 	}
-	var sql string
-	if strings.HasPrefix(sb.toStr(), "and") {
-		sql = sb.toStr()[3:]
+	return nil
+}
+
+func (r *generalDB) Page(e any, page *entity.Page) *entity.Page {
+	offset := (page.Cur - 1) * page.Size
+	result := make([]reflect.Value, 0)
+	find := Client.Where(e).Offset(offset).Limit(page.Size).Find(result)
+	if find.Error != nil && find.Error != gorm.ErrRecordNotFound {
+		log.Printf("sql异常,原因=%v", find.Error.Error())
+		return page
 	}
-	var result []entity.User
-	client.Where(sql, params).First(result)
-	return result
+	var count int64
+	find.Count(&count)
+	page.Data = result
+	page.Total = count
+	return page
+}
+
+func (r *generalDB) RemoveById(e any, id any) bool {
+	Client.Delete(e, id)
+	return true
+}
+func (r *generalDB) RemoveByIds(e any, ids ...any) bool {
+	Client.Where("id = ?", ids).Delete(e)
+	return true
 }
 
 type StringBuilder struct {
@@ -160,11 +171,11 @@ func (s *StringBuilder) toStr() string {
 }
 
 type GeneralQ struct {
-	eq    map[string]interface{}
-	ne    map[string]interface{}
-	in    map[string]interface{}
-	notIn map[string]interface{}
-	or    map[string]interface{}
+	eq    map[string]any
+	ne    map[string]any
+	in    map[string]any
+	notIn map[string]any
+	or    map[string]any
 	q     []string     //查询字段
 	asc   []string     //升序字段
 	desc  []string     //降序
@@ -174,3 +185,153 @@ type GeneralQ struct {
 }
 type generalDB struct {
 }
+
+func (r *generalDB) LambdaQuery() *LambdaQuery {
+	return &LambdaQuery{}
+}
+
+type LambdaQuery struct {
+	eq    map[string]any
+	ne    map[string]any
+	in    map[string]any
+	notIn map[string]any
+	q     []string //查询字段
+	asc   []string //升序字段
+	desc  []string //降序
+	group []string //分组
+}
+
+func (l *LambdaQuery) Eq(field string, value any) *LambdaQuery {
+	if l.eq == nil {
+		l.eq = map[string]any{}
+	}
+	l.eq[field] = value
+	return l
+}
+func (l *LambdaQuery) Ne(field string, value any) *LambdaQuery {
+	if l.ne == nil {
+		l.ne = map[string]any{}
+	}
+	l.ne[field] = value
+	return l
+}
+func (l *LambdaQuery) In(field string, value any) *LambdaQuery {
+	if l.in == nil {
+		l.in = map[string]any{}
+	}
+	l.in[field] = value
+	return l
+}
+func (l *LambdaQuery) NotIn(field string, value any) *LambdaQuery {
+	if l.notIn == nil {
+		l.notIn = map[string]any{}
+	}
+	l.notIn[field] = value
+	return l
+}
+func (l *LambdaQuery) Select(field string) *LambdaQuery {
+	l.q = append(l.q, field)
+	return l
+}
+func (l *LambdaQuery) Asc(field string) *LambdaQuery {
+	l.asc = append(l.asc, field)
+	return l
+}
+func (l *LambdaQuery) Desc(field string) *LambdaQuery {
+	l.desc = append(l.desc, field)
+	return l
+}
+func (l *LambdaQuery) Group(field string) *LambdaQuery {
+	l.group = append(l.group, field)
+	return l
+}
+func (l *LambdaQuery) One(e any) {
+	db := Client
+	if _, arr := creatSql(l); len(arr) > 0 {
+		db = db.Where(creatSql(l))
+	}
+	if !collection.MapIsEmpty(l.notIn) {
+		db = db.Where(l.notIn)
+	}
+	if len(l.q) > 0 {
+		db = db.Select(l.q)
+	}
+	db = db.Order(arrayConvSql(l.asc, Asc))
+	db = db.Order(arrayConvSql(l.desc, Desc))
+	db.Find(e)
+}
+func (l *LambdaQuery) List(e any) {
+	db := Client
+	if _, arr := creatSql(l); len(arr) > 0 {
+		db = db.Where(creatSql(l))
+	}
+	if !collection.MapIsEmpty(l.notIn) {
+		db = db.Not(l.notIn)
+	}
+	if len(l.q) > 0 {
+		db = db.Select(l.q)
+	}
+	db = db.Order(arrayConvSql(l.asc, Asc))
+	db = db.Order(arrayConvSql(l.desc, Desc))
+	db.Find(e)
+}
+func (l *LambdaQuery) Page(e any, page *entity.Page) {
+	db := Client
+	if _, arr := creatSql(l); len(arr) > 0 {
+		db = db.Where(creatSql(l))
+	}
+	if !collection.MapIsEmpty(l.notIn) {
+		db = db.Not(l.notIn)
+	}
+	if len(l.q) > 0 {
+		db = db.Select(l.q)
+	}
+	offset := (page.Cur - 1) * page.Size
+	db = db.Order(arrayConvSql(l.asc, Asc))
+	db = db.Order(arrayConvSql(l.desc, Desc))
+	find := db.Offset(offset).Limit(page.Size).Find(e)
+	var count int64
+	find.Count(&count)
+	page.Data = e
+	page.Total = count
+}
+func creatSql(l *LambdaQuery) (string, []any) {
+	vList := make([]any, 0)
+	sb := StringBuilder{sb: &strings.Builder{}}
+	vList = funcName(l.eq, &sb, vList, Equal)
+	vList = funcName(l.ne, &sb, vList, NoEqual)
+	vList = funcName(l.in, &sb, vList, IN)
+	if len(vList) > 0 {
+		return sb.toStr()[3:], vList
+	}
+	return "", vList
+}
+
+func funcName(t map[string]any, sb *StringBuilder, vList []any, enum string) []any {
+	if !collection.MapIsEmpty(t) {
+		for k, v := range t {
+			sb.append("and ").append(k).append(enum)
+			vList = append(vList, v)
+		}
+	}
+	return vList
+}
+func arrayConvSql(array []string, order string) string {
+	sb := StringBuilder{sb: &strings.Builder{}}
+	if len(array) > 0 {
+		for i := range array {
+			sb.append(" ").append(array[i])
+		}
+		sb.append(" ").append(order)
+	}
+	return sb.toStr()
+}
+
+const (
+	Equal   = " = ?"
+	NoEqual = " <> ?"
+	IN      = " in ?"
+	NotIn   = " not in ?"
+	Asc     = " asc "
+	Desc    = " desc "
+)
