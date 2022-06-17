@@ -27,7 +27,10 @@ jobs:
     - name: npm install
       run: npm install ./ui
       
-    - name: npm build1
-      run: cd ui
+    #- name: npm build1
+    #  run: cd ui
     - name: npm build2
-      run: npm run build
+      
+      with: 
+        working-directory: ui
+        build: npm run build
