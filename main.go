@@ -3,6 +3,7 @@ package main
 import (
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-contrib/sessions/cookie"
+	"github.com/gin-contrib/static"
 	"github.com/gin-gonic/gin"
 	"net/http"
 	"sensitive-storage/router"
@@ -71,6 +72,7 @@ func main() {
 	r := setupRouter()
 	r.Use(router.Cors())
 	r.Use(gin.Recovery())
+	r.Use(static.Serve("/ui", static.LocalFile("./ui/build", true)))
 	store := cookie.NewStore([]byte("wodemiyao"))
 	r.Use(sessions.Sessions("sessionId", store))
 	// 初始化路由

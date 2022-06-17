@@ -16,6 +16,8 @@ import (
 
 var client *gorm.DB
 
+var Sqlx = client
+
 func InitDataBase() *sql.DB {
 	var err error
 	dbName := "sensitive.db"
@@ -34,6 +36,7 @@ func InitDataBase() *sql.DB {
 	pool.SetMaxIdleConns(10)
 	pool.SetMaxOpenConns(10)
 	pool.SetConnMaxLifetime(time.Minute)
+	Sqlx = client
 	return pool
 }
 
