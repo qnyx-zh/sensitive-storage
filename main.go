@@ -4,8 +4,6 @@ import (
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-contrib/sessions/cookie"
 	"github.com/gin-gonic/gin"
-	"gopkg.in/ini.v1"
-	"log"
 	"net/http"
 	"sensitive-storage/router"
 	"sensitive-storage/service"
@@ -37,7 +35,7 @@ func setupRouter() *gin.Engine {
 	// authorized.Use(gin.BasicAuth(gin.Credentials{
 	//	  "foo":  "bar",
 	//	  "manu": "123",
-	//}))
+	// }))
 	authorized := r.Group("/", gin.BasicAuth(gin.Accounts{
 		"foo":  "bar", // user:foo password:bar
 		"manu": "123", // user:manu password:123
@@ -70,21 +68,17 @@ func setupRouter() *gin.Engine {
 }
 
 func main() {
-	conf, err := ini.Load("config/my.ini")
-	if err != nil {
-		log.Fatal("配置文件读取失败, err = ", err)
-	}
 	r := setupRouter()
 	r.Use(router.Cors())
 	r.Use(gin.Recovery())
 	store := cookie.NewStore([]byte("wodemiyao"))
 	r.Use(sessions.Sessions("sessionId", store))
-	//初始化路由
+	// 初始化路由
 	router.InitRouter(r)
-	//初始化数据库连接
-	db := service.InitDataBase(conf)
+	// 初始化数据库连接
+	db := service.InitDataBase()
 	defer db.Close()
-	//设置端口号启动
-	port := ":" + conf.Section("").Key("port").String()
+	// 设置端口号启动
+	port := ":8099"
 	r.Run(port)
 }

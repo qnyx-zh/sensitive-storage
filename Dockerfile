@@ -1,5 +1,6 @@
-FROM alpine
-COPY ./sensitive-storage /app
-COPY ./ui/build/ /app/ui
+FROM ubuntu:20.04
+COPY ./sensitive-storage /app/sensitive-storage
+COPY ./ui/build/ /app/ui/
+COPY ./start.sh /app/start.sh
 WORKDIR /app
-CMD ./sensitive-storage
+CMD ["sh","./sensitive-storage"]
