@@ -29,8 +29,6 @@ jobs:
       
     #- name: npm build1
     #  run: cd ui
-    - name: npm build2
-      
-      with: 
-        working-directory: ui
-        build: npm run build
+    - name: npm build
+      working-directory: ui
+      run: npm run build
