@@ -31,7 +31,8 @@ func (u *UserApi) Register(c *gin.Context) {
 		return
 	}
 	userEntity := &entity.User{}
-	copier.CopyVal(param, userEntity)
+	_ = copier.CopyVal(param, userEntity)
+	userEntity.Password = crypt.Md5crypt(param.Password)
 	save := service.GeneralDB.Save(userEntity)
 	c.JSON(http.StatusOK, callback.SuccessData(save))
 }
@@ -48,26 +49,17 @@ func (u *UserApi) Login(c *gin.Context) {
 	var user entity.User
 	user.Username = param.Username
 	user.Password = crypt.Md5crypt(param.Password)
-	var result entity.User
-	if result = service.GeneralDB.GetOne(&user).(entity.User); result == (entity.User{}) {
+	result := entity.User{}
+	if err = service.GeneralDB.GetOne(&user, &result); err != nil {
+		c.JSON(http.StatusBadRequest, callback.BackFail("网络错误"))
+		return
+	}
+	if result == (entity.User{}) {
 		c.JSON(http.StatusBadRequest, callback.BackFail("用户不存在或密码错误"))
 		return
 	}
-	sessions.Default(c).Set("userId", result.BaseField.Id)
+	session := sessions.Default(c)
+	session.Set("userId", result.BaseField.Id)
+	_ = session.Save()
 	c.JSON(http.StatusOK, callback.Success())
-}
-
-//CheckLogin 检查是否登陆
-func (u *UserApi) CheckLogin(c *gin.Context) {
-	userId := sessions.Default(c).Get("userId")
-	if userId == nil {
-		c.AbortWithStatusJSON(http.StatusOK, callback.BackFail("登陆异常"))
-		return
-	}
-	c.Next()
-}
-
-// GetUserId 获取用户id
-func (u *UserApi) GetUserId(c *gin.Context) uint {
-	return sessions.Default(c).Get("userId").(uint)
 }

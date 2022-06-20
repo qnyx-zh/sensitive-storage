@@ -5,7 +5,7 @@ import (
 	"sensitive-storage/module/resp"
 )
 
-func SuccessData(data interface{}) resp.Resp {
+func SuccessData(data any) resp.Resp {
 	if data == nil {
 		data = map[string]interface{}{}
 	}

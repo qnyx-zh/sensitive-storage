@@ -8,5 +8,5 @@ type Resp struct {
 	//状态码
 	Code int `json:"code"`
 	//返回数据
-	Data interface{} `json:"data"`
+	Data any `json:"data"`
 }

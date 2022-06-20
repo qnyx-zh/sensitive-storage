@@ -1,19 +1,10 @@
 package entity
 
 type Page struct {
-	Cur   int         `json:"cur"`   // 当前页
-	Size  int         `json:"size"`  // 每页大小
-	Total int         `json:"total"` // 总数
-	Data  interface{} `json:"data"`  // 数据
-}
-
-func NewPage(cur, size, total int, data interface{}) *Page {
-	return &Page{
-		Cur:   cur,
-		Size:  size,
-		Total: total,
-		Data:  data,
-	}
+	Cur   int   `json:"cur"`   //当前页
+	Size  int   `json:"size"`  //每页大小
+	Total int64 `json:"total"` //总数
+	Data  any   `json:"data"`  //数据
 }
 
 type BaseField struct {
