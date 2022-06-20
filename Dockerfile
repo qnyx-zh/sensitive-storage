@@ -14,7 +14,6 @@ FROM alpine:3
 WORKDIR /
 COPY --from=build /go/src/sensitive-storage ./
 COPY --from=build /go/src/sensitive-storage/ui/build/ ./ui/build/
-RUN mkdir data
 
 EXPOSE 8099
 
