@@ -42,8 +42,8 @@ jobs:
 #      working-directory: ../sensitive-storage
 #      uses: docker/build-push-action@ad44023a93711e3deb337508980b4b5e9bcdc5dc
       run: |
-        docker build -t kiririx/passwd:latest .
-        docker push kiririx/passwd:latest
+        docker build -t ${{ secrets.DOCKER_USERNAME }}/passwd:latest .
+        docker push ${{ secrets.DOCKER_USERNAME }}/passwd:latest
 
     - name: Set up Go
       uses: actions/setup-go@v3
