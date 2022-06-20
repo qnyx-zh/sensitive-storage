@@ -3,8 +3,6 @@ name: Go
 on:
   push:
     branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
 
 jobs:
 
@@ -13,22 +11,47 @@ jobs:
     steps:
     - uses: actions/checkout@v3
 
-    - name: Set up Go
-      uses: actions/setup-go@v3
-      with:
-        go-version: 1.18
 
-    - name: Build
-      run: go build -v ./...
     
     - name: Setup Node.js environment
       uses: actions/setup-node@v3.3.0
       
     - name: npm install
       run: npm install ./ui
-      
-    #- name: npm build1
-    #  run: cd ui
+
     - name: npm build
       working-directory: ui
       run: npm run build
+      continue-on-error: true
+
+    - name: Log in to Docker Hub
+      uses: docker/login-action@f054a8b539a109f9f41c372932f1ae047eff08c9
+      with:
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
+
+    - name: Extract metadata (tags, labels) for Docker
+      id: meta
+      uses: docker/metadata-action@98669ae865ea3cffbcbaa878cf57c20bbf1c6c38
+      with:
+        images: ${{ secrets.DOCKER_USERNAME }}/sensitive-storage:latest
+
+    - name: Build and push Docker image
+#      working-directory: ../sensitive-storage
+#      uses: docker/build-push-action@ad44023a93711e3deb337508980b4b5e9bcdc5dc
+      run: |
+        docker build -t ${{ secrets.DOCKER_USERNAME }}/passwd:latest .
+        docker push ${{ secrets.DOCKER_USERNAME }}/passwd:latest
+
+    - name: Set up Go
+      uses: actions/setup-go@v3
+      with:
+        go-version: 1.18
+
+    - name: send upgrade message
+      working-directory: ./workflow/client
+
+      run: go run main.go -sa ${{ secrets.UPGRADE_ADDR }}
+
+
+

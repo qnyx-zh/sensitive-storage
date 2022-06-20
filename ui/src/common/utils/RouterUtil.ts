@@ -8,7 +8,8 @@ export default class RouterUtil {
         if (params) {
 
         }
-        window.open(ownerHref + url, '_self');
+        window.open(ownerHref + "/ui/#" + url, '_self');
+
     }
 
     public static replace = (url: string) => {

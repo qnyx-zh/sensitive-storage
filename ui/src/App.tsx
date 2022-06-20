@@ -30,7 +30,7 @@ class App extends React.Component<any, any>{
 
     render() {
         return (
-            <BrowserRouter>
+            <HashRouter>
                 <Routes>
                     {/*  <Route component={} path={"/login"}/>*/}
                     <Route path={"/passwdInfo"} element={<PasswdInfo/>}></Route>
@@ -39,7 +39,7 @@ class App extends React.Component<any, any>{
                     <Route path={"/m/register"} element={<MRegister/>}></Route>
                     <Route path={"/m/passwdInfo"} element={<MPasswdInfo/>}></Route>
                 </Routes>
-            </BrowserRouter>
+            </HashRouter>
         );
     }
 

@@ -7,9 +7,9 @@ import (
 
 func PasswordRouter(r *gin.Engine) {
 	rg := r.Group("/")
-	rg.POST("passwdInfo", api.CheckLogin, api.Pass.Save)
-	rg.GET("passwdInfo/:id", api.CheckLogin, api.Pass.QueryById)
-	rg.GET("passwdInfos", api.CheckLogin, api.Pass.QueryList)
-	rg.DELETE("passwdInfo/:id", api.CheckLogin, api.Pass.DeleteById)
-	rg.GET("search", api.CheckLogin, api.Pass.SearchPasswdList)
+	rg.POST("passwdInfo", api.User.CheckLogin, api.Pass.SavePassword)
+	rg.GET("passwdInfo/:id", api.User.CheckLogin, api.Pass.GetPassword)
+	rg.GET("passwdInfos", api.User.CheckLogin, api.Pass.GetPasswords)
+	rg.DELETE("passwdInfo/:id", api.User.CheckLogin, api.Pass.DeletePassword)
+	rg.GET("search", api.User.CheckLogin, api.Pass.GetPasswords)
 }

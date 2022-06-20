@@ -12,3 +12,10 @@ type BaseField struct {
 	CreatedAt int  `gorm:"column:createTime;type:long;autoCreateTime:milli" json:"createTime"`
 	UpdatedAt int  `gorm:"column:updateTime;type:long;autoUpdateTime:milli" json:"updateTime"`
 }
+
+func (b *BaseField) IsEmpty() bool {
+	if b.Id <= 0 {
+		return true
+	}
+	return false
+}

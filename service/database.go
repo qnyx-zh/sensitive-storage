@@ -11,6 +11,7 @@ import (
 	"log"
 	"os"
 	"reflect"
+	"sensitive-storage/env"
 	"sensitive-storage/module/entity"
 	"sensitive-storage/util/collection"
 	"strings"
@@ -19,9 +20,20 @@ import (
 
 var Client *gorm.DB
 
-func InitDataBase(conf *ini.File) *sql.DB {
+
+func InitDataBase() *sql.DB {
 	var err error
-	dbName := conf.Section("sqlite").Key("db_name").String()
+	db := os.Getenv(env.DB)
+	var dial gorm.Dialector
+	if db == "" || db == "sqlite" {
+		dial = sqlite.Open("./data/sensitive.db")
+	} else if db == "mysql" {
+		dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?loc=Local&timeout=5s&charset=utf8mb4&collation=utf8mb4_unicode_ci&interpolateParams=true&parseTime=true&loc=Local",
+			os.Getenv("db_username"), os.Getenv("db_password"), os.Getenv("db_host"), os.Getenv("db_port"), os.Getenv("db_database"))
+		dial = mysql.Open(dsn)
+	} else {
+		panic("db not validate")
+	}
 	newLogger := logger.New(
 		log.New(os.Stdout, "\r\n", log.LstdFlags), // io writer（日志输出的目标，前缀和日志包含的内容——译者注）
 		logger.Config{
@@ -31,7 +43,7 @@ func InitDataBase(conf *ini.File) *sql.DB {
 			Colorful:                  false,       // 禁用彩色打印
 		},
 	)
-	Client, err = gorm.Open(sqlite.Open(dbName), &gorm.Config{
+	Client, err = gorm.Open(dial, &gorm.Config{
 		SkipDefaultTransaction: false, //跳过默认事务
 		NamingStrategy: schema.NamingStrategy{
 			SingularTable: false, // 设置为true时，表名为复数形式 User的表名应该是user

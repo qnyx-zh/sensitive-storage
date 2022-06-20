@@ -2,66 +2,86 @@ package api
 
 import (
 	"github.com/gin-gonic/gin"
+	"log"
 	"net/http"
 	"sensitive-storage/module/entity"
 	"sensitive-storage/module/req"
 	"sensitive-storage/service"
 	"sensitive-storage/util/callback"
 	"sensitive-storage/util/copier"
-	"strconv"
 )
 
 type PasswordApi struct {
 }
 
-func (p *PasswordApi) Save(c *gin.Context) {
-	var saveInfoReq req.SavePassword
-	if err := c.ShouldBindJSON(&saveInfoReq); err != nil {
+func (*PasswordApi) SavePassword(c *gin.Context) {
+	var saveReq req.SavePassword
+	if err := c.ShouldBindJSON(&saveReq); err != nil {
 		c.JSON(http.StatusBadRequest, callback.BackFail("参数错误"))
 		return
 	}
-	userId := GetUserId(c)
+	userId := User.GetUserId(c)
 	passwd := &entity.Password{}
-	_ = copier.CopyVal(saveInfoReq, passwd)
-	passwd.UserId = userId
-	if rows := service.GeneralDB.Save(passwd); rows > 0 {
+	err := copier.CopyVal(saveReq, passwd)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, callback.BackFail("参数错误"))
+		return
+	}
+	if saveReq.ToUpdate() {
+		passwd.Id = saveReq.Id
+	}
+	if isSuccessful := service.Password.Save(passwd, userId); isSuccessful {
 		c.JSON(http.StatusOK, callback.Success())
 		return
 	}
-
 	c.JSON(http.StatusBadRequest, callback.BackFail("保存失败"))
 }
 
-func (p *PasswordApi) QueryById(c *gin.Context) {
-	id, _ := strconv.ParseUint(c.Param("id"), 10, 10)
-	userId := GetUserId(c)
-	passwd := entity.Password{UserId: userId, BaseField: entity.BaseField{Id: uint(id)}}
-	result := &entity.Password{}
-	err := service.GeneralDB.GetOne(&passwd, result)
-	if err != nil {
-		c.JSON(http.StatusOK, callback.SuccessData(&entity.Password{}))
+func (*PasswordApi) GetPassword(c *gin.Context) {
+	var idReq req.IdReq
+	if err := c.ShouldBindUri(&idReq); err != nil {
+		c.JSON(http.StatusBadRequest, callback.BackFail("参数错误"))
 		return
 	}
-	c.JSON(http.StatusOK, callback.SuccessData(result))
+	password := service.Password.QueryPasswordById(idReq.Id)
+	c.JSON(http.StatusOK, callback.SuccessData(password))
 }
 
-func (p *PasswordApi) QueryList(c *gin.Context) {
-	userId := GetUserId(c)
-	page := GetPage(c)
-	service.GeneralDB.LambdaQuery().Eq("user_id", userId).Page(&[]entity.Password{}, page)
-	c.JSON(http.StatusOK, callback.SuccessData(page))
+func (*PasswordApi) GetPasswords(c *gin.Context) {
+	userId := User.GetUserId(c)
+	passwdReq := req.QueryPasswd{}
+	if err := c.ShouldBindQuery(&passwdReq); err != nil {
+		log.Printf("参数绑定错误,原因=%v", err)
+		c.JSON(http.StatusOK, callback.BackFail("参数错误"))
+		return
+	}
+	var passwords []entity.Password
+	var total int64
+	if passwdReq.Q == "" {
+		passwords, total = service.Password.QueryPasswordListByUserId(userId, *passwdReq.PageNum, *passwdReq.PageSize)
+	} else {
+		passwords, total = service.Password.FilterPasswordListByUserId(userId, passwdReq.Q, *passwdReq.PageNum, *passwdReq.PageSize)
+	}
+	if len(passwords) < 1 {
+		c.JSON(http.StatusOK, callback.SuccessData(map[string]interface{}{
+			"passwds": [0]entity.Password{},
+			"total":   0,
+		}))
+	} else {
+		c.JSON(http.StatusOK, callback.SuccessData(map[string]interface{}{
+			"passwds": passwords,
+			"total":   total,
+		}))
+	}
 }
 
-func (p *PasswordApi) DeleteById(c *gin.Context) {
-	id := c.Param("id")
-	service.GeneralDB.RemoveById(&entity.Password{}, id)
-	c.JSON(http.StatusOK, callback.SuccessData(true))
-}
-
-func (p *PasswordApi) SearchPasswdList(c *gin.Context) {
-	userId := GetUserId(c)
-	q := c.Param("q")
-	GetPage(c)
-	page := service.Password.SearchPasswdList(userId, q, GetPage(c))
-	c.JSON(http.StatusOK, callback.SuccessData(page))
+func (*PasswordApi) DeletePassword(c *gin.Context) {
+	var idReq req.IdReq
+	if err := c.ShouldBindUri(&idReq); err != nil {
+		log.Printf("参数绑定错误,原因=%v", err)
+		c.JSON(http.StatusOK, callback.BackFail("参数错误"))
+		return
+	}
+	service.Password.DeleteById(idReq.Id)
+	c.JSON(http.StatusOK, callback.Success())
 }

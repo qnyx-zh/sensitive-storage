@@ -23,6 +23,7 @@ import JSONBig from "json-bigint"
 //     return JSONBig.parse(data)
 // }]
 
+const LoginFail = 1000
 
 axios.interceptors.request.use(
     (request: any) => {
@@ -39,6 +40,10 @@ export default class HttpClient {
             if (_data.status === 'error') {
                 console.log('errLog[' + url + ']:' + _data.errMsg);
                 Notification.error(_data.errMsg)
+                if (_data.code == LoginFail) {
+                    RouterUtil.push(RouterURL.LOGIN)
+                    return
+                }
             } else {
                 if (successFunc) {
                     successFunc(_data as Resp);

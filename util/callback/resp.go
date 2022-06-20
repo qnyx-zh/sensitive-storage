@@ -6,6 +6,9 @@ import (
 )
 
 func SuccessData(data any) resp.Resp {
+	if data == nil {
+		data = map[string]interface{}{}
+	}
 	result := &resp.Resp{
 		Status: constant.RespSuccessStr,
 		Code:   constant.RespSuccess,
@@ -18,6 +21,7 @@ func Success() resp.Resp {
 	result := &resp.Resp{
 		Status: constant.RespSuccessStr,
 		Code:   constant.RespSuccess,
+		Data:   map[string]interface{}{},
 	}
 	return *result
 }
