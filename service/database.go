@@ -3,11 +3,15 @@ package service
 import (
 	"database/sql"
 	"errors"
+	"fmt"
+	"gorm.io/driver/mysql"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 	"gorm.io/gorm/schema"
 	"log"
+	"os"
 	"reflect"
+	"sensitive-storage/env"
 	"sensitive-storage/module/entity"
 	myReflect "sensitive-storage/util/my-reflect"
 	"strings"
@@ -20,8 +24,18 @@ var Sqlx = client
 
 func InitDataBase() *sql.DB {
 	var err error
-	dbName := "./data/sensitive.db"
-	client, err = gorm.Open(sqlite.Open(dbName), &gorm.Config{
+	db := os.Getenv(env.DB)
+	var dial gorm.Dialector
+	if db == "" || db == "sqlite" {
+		dial = sqlite.Open("./data/sensitive.db")
+	} else if db == "mysql" {
+		dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?loc=Local&timeout=5s&charset=utf8mb4&collation=utf8mb4_unicode_ci&interpolateParams=true&parseTime=true&loc=Local",
+			os.Getenv("db_username"), os.Getenv("db_password"), os.Getenv("db_host"), os.Getenv("db_port"), os.Getenv("db_database"))
+		dial = mysql.Open(dsn)
+	} else {
+		panic("db not validate")
+	}
+	client, err = gorm.Open(dial, &gorm.Config{
 		SkipDefaultTransaction: false, // 跳过默认事务
 		NamingStrategy: schema.NamingStrategy{
 			SingularTable: false, // 设置为true时，表名为复数形式 User的表名应该是user
@@ -31,6 +45,7 @@ func InitDataBase() *sql.DB {
 	})
 	if err != nil {
 		log.Fatalln("数据库连接错误")
+		return nil
 	}
 	pool, err := client.DB()
 	pool.SetMaxIdleConns(10)
