@@ -29,6 +29,10 @@ func setupRouter() *gin.Engine {
 			c.JSON(http.StatusOK, gin.H{"user": user, "status": "no value"})
 		}
 	})
+	r.GET("/", func(c *gin.Context) {
+		// 访问根地址，根据用户的浏览器定位到前端的中间页面，即/ui/#/
+		c.Redirect(http.StatusFound, "/ui/#/")
+	})
 
 	// Authorized group (uses gin.BasicAuth() middleware)
 	// Same than:

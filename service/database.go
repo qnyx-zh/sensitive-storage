@@ -3,7 +3,8 @@ package service
 import (
 	"database/sql"
 	"errors"
-	"gopkg.in/ini.v1"
+	"fmt"
+	"gorm.io/driver/mysql"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
@@ -19,7 +20,6 @@ import (
 )
 
 var Client *gorm.DB
-
 
 func InitDataBase() *sql.DB {
 	var err error
@@ -44,12 +44,12 @@ func InitDataBase() *sql.DB {
 		},
 	)
 	Client, err = gorm.Open(dial, &gorm.Config{
-		SkipDefaultTransaction: false, //跳过默认事务
+		SkipDefaultTransaction: false, // 跳过默认事务
 		NamingStrategy: schema.NamingStrategy{
 			SingularTable: false, // 设置为true时，表名为复数形式 User的表名应该是user
-			TablePrefix:   "t_",  //表名前缀 User的表名应该是t_user
+			TablePrefix:   "t_",  // 表名前缀 User的表名应该是t_user
 		},
-		DisableForeignKeyConstraintWhenMigrating: true, //设置成为逻辑外键(在物理数据库上没有外键，仅体现在代码上)
+		DisableForeignKeyConstraintWhenMigrating: true, // 设置成为逻辑外键(在物理数据库上没有外键，仅体现在代码上)
 		Logger:                                   newLogger,
 	})
 	if err != nil {
@@ -188,12 +188,12 @@ type GeneralQ struct {
 	in    map[string]any
 	notIn map[string]any
 	or    map[string]any
-	q     []string     //查询字段
-	asc   []string     //升序字段
-	desc  []string     //降序
-	page  *entity.Page //分页
-	sql   string       //自定义sql
-	group []string     //分组
+	q     []string     // 查询字段
+	asc   []string     // 升序字段
+	desc  []string     // 降序
+	page  *entity.Page // 分页
+	sql   string       // 自定义sql
+	group []string     // 分组
 }
 type generalDB struct {
 }
@@ -207,10 +207,10 @@ type LambdaQuery struct {
 	ne    map[string]any
 	in    map[string]any
 	notIn map[string]any
-	q     []string //查询字段
-	asc   []string //升序字段
-	desc  []string //降序
-	group []string //分组
+	q     []string // 查询字段
+	asc   []string // 升序字段
+	desc  []string // 降序
+	group []string // 分组
 }
 
 func (l *LambdaQuery) Eq(field string, value any) *LambdaQuery {
