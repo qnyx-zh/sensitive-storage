@@ -150,8 +150,8 @@ export class Login extends React.Component<Props, State> {
                 }
                 RouterUtil.push(RouterURL.PASSWD_INFO)
             }, err => {
-                if (err)
-                    Notification.error("登录失败")
+                // if (err)
+                //     Notification.error("登录失败: ")
             })
         },
         render: () => {

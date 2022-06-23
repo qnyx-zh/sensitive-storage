@@ -2,12 +2,13 @@ package router
 
 import (
 	"sensitive-storage/api"
+	"sensitive-storage/module/req"
 
 	"github.com/gin-gonic/gin"
 )
 
 func UserRouter(r *gin.Engine) {
 	rg := r.Group("/")
-	rg.POST("register", api.User.Register)
-	rg.POST("login", api.User.Login)
+	POST(rg, "register", &req.Register{}, api.User.Register)
+	POST(rg, "login", &req.Login{}, api.User.Login)
 }

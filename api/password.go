@@ -20,7 +20,7 @@ func (*PasswordApi) SavePassword(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, callback.BackFail("参数错误"))
 		return
 	}
-	userId := User.GetUserId(c)
+	userId := GetUserId(c)
 	passwd := &entity.Password{}
 	err := copier.CopyVal(saveReq, passwd)
 	if err != nil {
@@ -48,7 +48,7 @@ func (*PasswordApi) GetPassword(c *gin.Context) {
 }
 
 func (*PasswordApi) GetPasswords(c *gin.Context) {
-	userId := User.GetUserId(c)
+	userId := GetUserId(c)
 	passwdReq := req.QueryPasswd{}
 	if err := c.ShouldBindQuery(&passwdReq); err != nil {
 		log.Printf("参数绑定错误,原因=%v", err)
